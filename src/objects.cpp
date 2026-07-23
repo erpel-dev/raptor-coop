@@ -8,6 +8,7 @@
 #include "fx.h"
 #include "anims.h"
 #include "fileids.h"
+#include "player.h"
 
 int obj_cnt;
 OBJ first_objs, last_objs, objs[MAX_OBJS];
@@ -1161,45 +1162,73 @@ OBJS_SubEnergy(
     int amt                    // INPUT : amount to subtract
 )
 {
+    return OBJS_SubEnergyPlr(RAP_FirstLivingPlayer(), amt);
+}
+
+/***************************************************************************
+OBJS_SubEnergyPlr() - Subtract energy from a specific co-op player
+ ***************************************************************************/
+int
+OBJS_SubEnergyPlr(
+    int pidx,
+    int amt
+)
+{
     OBJ *cur;
+    Player *pl;
 
     if (godmode)
         return 0;
-    
+
     if (startendwave != -1)
         return 0;
 
+    if (pidx < 0 || pidx >= num_players)
+        pidx = 0;
+
+    pl = &players[pidx];
+    if (!pl->alive)
+        return 0;
+
     cur = p_objs[S_SUPER_SHIELD];
-    
+
     if (curplr_diff == DIFF_0 && amt > 1)
         amt >>= 1;
-    
+
     if (cur)
     {
-        ANIMS_StartAnim(A_SUPER_SHIELD, 0, 0);
-        
+        ANIMS_StartPlayerAnim(A_SUPER_SHIELD, 0, 0, pidx);
+
         SND_Patch(FX_SHIT, 127);
-        
+
         cur->num -= amt;
-        
+
         if (cur->num < 0)
             OBJS_Del(S_SUPER_SHIELD);
+
+        return cur->num > 0 ? cur->num : pl->energy;
     }
-    else
+
+    SND_Patch(FX_HIT, 127);
+
+    pl->energy -= amt;
+    if (pl->energy < 0)
+        pl->energy = 0;
+
+    /* Keep shared inventory energy mirrored from highest living player. */
+    cur = p_objs[S_ENERGY];
+    if (cur)
     {
-        cur = p_objs[S_ENERGY];
-        if (!cur)
-            return 0;
-        
-        SND_Patch(FX_HIT, 127);
-        
-        cur->num -= amt;
-        
-        if (cur->num < 0)
-            cur->num = 0;
+        int i, best = 0;
+        for (i = 0; i < num_players; i++)
+        {
+            if (players[i].alive && players[i].energy > best)
+                best = players[i].energy;
+        }
+        cur->num = best;
     }
-    
-    return cur->num;
+
+    return pl->energy;
 }
 
 /***************************************************************************
@@ -1210,42 +1239,101 @@ OBJS_AddEnergy(
     int amt                   // INPUT : amount to add
 )
 {
+    return OBJS_AddEnergyPlr(RAP_FirstLivingPlayer(), amt);
+}
+
+/***************************************************************************
+OBJS_AddEnergyPlr() - Add energy to a specific co-op player
+ ***************************************************************************/
+int
+OBJS_AddEnergyPlr(
+    int pidx,
+    int amt
+)
+{
     OBJ *cur;
-    
-    cur = p_objs[S_ENERGY];
-    
-    if (!cur)
+    Player *pl;
+    int max_cnt = MAX_SHIELD;
+
+    if (pidx < 0 || pidx >= num_players)
+        pidx = 0;
+
+    pl = &players[pidx];
+    if (!pl->alive)
         return 0;
-    
-    if (cur->num < cur->lib->max_cnt)
+
+    cur = p_objs[S_ENERGY];
+    if (cur && cur->lib)
+        max_cnt = cur->lib->max_cnt;
+
+    if (pl->energy < max_cnt)
     {
-        cur = p_objs[S_ENERGY];
-        
-        if (!cur)
-            return 0;
-        
-        cur->num += amt;
-        
-        if (cur->num > cur->lib->max_cnt)
-            cur->num = cur->lib->max_cnt;
+        int i, best;
+        pl->energy += amt;
+        if (pl->energy > max_cnt)
+            pl->energy = max_cnt;
+
+        /* Mirror shared inventory from highest living player energy. */
+        if (cur)
+        {
+            best = 0;
+            for (i = 0; i < num_players; i++)
+            {
+                if (players[i].alive && players[i].energy > best)
+                    best = players[i].energy;
+            }
+            cur->num = best;
+        }
+
+        return pl->energy;
     }
-    else
-    {
-        cur = p_objs[S_SUPER_SHIELD];
-        
-        if (!cur)
-            return 0;
-        
-        if (!cur->num)
-            return 0;
-        
-        cur->num += (amt >> 2);
-        
-        if (cur->num > cur->lib->max_cnt)
-            cur->num = cur->lib->max_cnt;
-    }
-    
+
+    cur = p_objs[S_SUPER_SHIELD];
+
+    if (!cur)
+        return pl->energy;
+
+    if (!cur->num)
+        return pl->energy;
+
+    cur->num += amt;
+
+    if (cur->lib && cur->num > cur->lib->max_cnt)
+        cur->num = cur->lib->max_cnt;
+
     return cur->num;
+}
+
+int
+OBJS_GetEnergyPlr(
+    int pidx
+)
+{
+    if (pidx < 0 || pidx >= num_players)
+        return 0;
+    return players[pidx].energy;
+}
+
+/***************************************************************************
+OBJS_SyncEnergyFromPlayers() - Mirror highest living player energy into inventory
+ ***************************************************************************/
+void
+OBJS_SyncEnergyFromPlayers(
+    void
+)
+{
+    OBJ *cur;
+    int i, best = 0;
+
+    for (i = 0; i < num_players; i++)
+    {
+        if (players[i].alive && players[i].energy > best)
+            best = players[i].energy;
+    }
+
+    cur = p_objs[S_ENERGY];
+    if (cur)
+        cur->num = best;
 }
 
 /***************************************************************************

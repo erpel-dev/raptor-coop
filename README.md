@@ -19,24 +19,30 @@ For those who want to build themselves or who want more configuration informatio
 ## Installing
 You need the original assets (GLB files) from Raptor Call Of The Shadows shareware or full version 1.2 or higher.
 Important: No older versions before 1.2 are compatible! You have to take care of these files yourself.  
-The assets can be loaded from the current working directory (Raptor directory) or from the external system specific directory.
-**Please note that the release build version 0.8.0 does not support the external system specific directory and manages all assets, config and save files in the current working directory.**
-The external system specific directories are the following:
+The assets can be loaded from the current working directory (Raptor directory) or from the external system specific directory. 
+**Please note that the release build version 0.8.0 does not support the external system specific directory and manages all assets, config and save files in the current working directory.** 
+The external system specific directories are the following: 
 ```
  Windows: Users\Username\AppData\Roaming\Raptor\  
  Linux: ~/.local/share/Raptor/
  macOS: ~/Library/Application Support/Raptor/
  Android: storage/emulated/0/Android/data/com.raptor.skynettx/files/
 ```
-The config file `SETUP.INI` and the save files are also loaded and saved in these folders.
-On other systems that are not officially supported, the Raptor directory is used for loading and saving the config file and the save files.  
+The config file `SETUP.INI` and the save files are also loaded and saved in these folders. 
+On other systems that are not officially supported, the Raptor directory is used for loading and saving the config file and the save files. 
 Copy the `raptor.exe` (Windows) or `raptor` (Linux or macOS) from build directory to Raptor directory. 
 Under Windows copy the file `SDL.dll` from `include\SDL2-devel-2.28.2-VC\SDL2-2.28.2\lib\x86\` for 32 bit installation or for 64 bit installation from 
-`include\SDL2-devel-2.28.2-VC\SDL2-2.28.2\lib\x64\` to Raptor directory.
+`include\SDL2-devel-2.28.2-VC\SDL2-2.28.2\lib\x64\` to Raptor directory. 
 Under Linux install lib-sdl2 from the packagemanager of your respective distro. When you use macOS install lib-sdl2 from dmg or from a packagemanager like brew etc. 
-On an Android device, the APK can be installed via your preferred file manager.
-### Shareware
-Copy the following files to Raptor or external system specific directory:  
+On an Android device, the APK can be installed via your preferred file manager. 
+### Missing assets / shareware download 
+Original GLB assets are **not** bundled with Raptor (licensing). If they are missing at startup, desktop builds show a dialog that lets you: 
+1. **Download shareware** — fetches the DOS Games Archive shareware zip and installs `FILE0000.GLB` / `FILE0001.GLB` into the Raptor data directory 
+2. **View download page** — opens https://www.dosgamesarchive.com/download/raptor-call-of-the-shadows 
+3. **Quit** 
+For non-interactive installs you can set `RAPTOR_AUTO_FETCH_ASSETS=1`. 
+### Shareware 
+Copy the following files to Raptor or external system specific directory: 
 ```
 FILE0000.GLB  
 FILE0001.GLB  
@@ -94,16 +100,31 @@ When you have installed git on your system you can clone the repository by type 
 ### Windows
 You can use the projectfile for Visual Studio 2022 under `msvc\` or the projectfile for CodeBlocks under `gcc\`.
 
-### Linux
-Please remember to install the required dependencies lib-sdl2. In some distros there is an extra libsdl2-dev package like Debian or Ubuntu.  
-You can use the projectfile for CodeBlocks under `gcc\`.
-Otherwise you can use CMake. To use CMake type in the root of the repository:   
+### Linux 
+Please remember to install the required dependencies lib-sdl2. In some distros there is an extra libsdl2-dev package like Debian or Ubuntu. 
+You can use the projectfile for CodeBlocks under `gcc\`. 
+Otherwise you can use CMake. To use CMake type in the root of the repository: 
 ```
 mkdir build  
 cd build  
 cmake ..  
 make  
 ```
+Or run the interactive Linux build script (native and/or Flatpak): 
+```
+./linuxbuild.sh
+```
+#### Flatpak 
+There is no published Flathub package yet. This repository includes an in-tree Flatpak manifest at `pkg/flatpak/io.github.erpel_dev.Raptor.yml`. 
+Requirements: `flatpak`, `flatpak-builder`, and the Freedesktop 25.08 SDK (`org.freedesktop.Sdk//25.08`). 
+```
+./linuxbuild.sh   # choose option 2 or 3
+# or:
+flatpak-builder --user --install --force-clean build-flatpak pkg/flatpak/io.github.erpel_dev.Raptor.yml
+flatpak run io.github.erpel_dev.Raptor
+```
+Place the original GLB assets in: 
+`~/.var/app/io.github.erpel_dev.Raptor/data/Raptor/`
 
 ### macOS
 Install the required dependencies lib-sdl2. To build use CMake, type in the root of the repository:

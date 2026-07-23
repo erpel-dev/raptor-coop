@@ -13,6 +13,7 @@
 #include "input.h"
 #include "fileids.h"
 #include "entypes.h"
+#include "player.h"
 
 #define MAX_ESHOT 80
 
@@ -276,8 +277,11 @@ ESHOT_Shoot(
             cur->lib = &plib[LIB_ATPLAY];
             cur->move.x -= cur->lib->xoff;
             cur->move.y -= cur->lib->yoff;
-            cur->move.x2 = player_cx;
-            cur->move.y2 = player_cy;
+            {
+                int ti = RAP_NearestPlayerTo(cur->move.x, cur->move.y);
+                cur->move.x2 = players[ti].cx;
+                cur->move.y2 = players[ti].cy;
+            }
             cur->speed = 1;
             cur->type = ES_ATPLAYER;
             break;
@@ -362,8 +366,11 @@ ESHOT_Shoot(
             cur->lib = &plib[LIB_COCO];
             cur->move.x -= cur->lib->xoff;
             cur->move.y -= cur->lib->yoff;
-            cur->move.x2 = player_cx;
-            cur->move.y2 = player_cy;
+            {
+                int ti = RAP_NearestPlayerTo(cur->move.x, cur->move.y);
+                cur->move.x2 = players[ti].cx;
+                cur->move.y2 = players[ti].cy;
+            }
             cur->speed = 1;
             cur->type = ES_COCONUTS;
             break;
@@ -412,15 +419,25 @@ ESHOT_Think(
                 shot->y = shot->en->y + LE_SHORT(shot->en->lib->shooty[shot->gun_num]);
                 shot->move.y2 = 200;  
                 
-                dx = abs(shot->x - player_cx);
-                
-                if (dx < (PLAYERWIDTH / 2) && shot->y < player_cy)
                 {
-                    shot->move.y2 = player_cy + (wrand() % 4) - 2;
-                    OBJS_SubEnergy(lib->hits);
-                    if ((haptic) && (control == 2))
+                    int pi;
+                    for (pi = 0; pi < num_players; pi++)
                     {
-                        IPT_CalJoyRumbleLow();                                            //Rumble when Laser eshot is hit
+                        Player *pl = &players[pi];
+                        int dxp;
+                        if (!pl->alive || pl->energy <= 0)
+                            continue;
+                        dxp = abs(shot->x - pl->cx);
+                        if (dxp < (PLAYERWIDTH / 2) && shot->y < pl->cy)
+                        {
+                            shot->move.y2 = pl->cy + (wrand() % 4) - 2;
+                            OBJS_SubEnergyPlr(pi, lib->hits);
+                            if ((haptic) && (control == 2))
+                            {
+                                IPT_CalJoyRumbleLow();
+                            }
+                            break;
+                        }
                     }
                 }
             }
@@ -472,17 +489,27 @@ ESHOT_Think(
             if (shot->x >= 320 || shot->x < 0)
                 shot->doneflag = 1;
             
-            dx = abs(shot->x - player_cx);
-            dy = abs(shot->y - player_cy);
-            
-            if (dx < (PLAYERWIDTH / 2) && dy < (PLAYERWIDTH / 2))
             {
-                ANIMS_StartAnim(A_SMALL_AIR_EXPLO, shot->x, shot->y);
-                shot->doneflag = 1;
-                OBJS_SubEnergy(lib->hits);
-                if ((haptic) && (control == 2))
+                int pi;
+                for (pi = 0; pi < num_players; pi++)
                 {
-                    IPT_CalJoyRumbleLow();                                                                 //Rumble when eshot is hit
+                    Player *pl = &players[pi];
+                    int dxp, dyp;
+                    if (!pl->alive || pl->energy <= 0)
+                        continue;
+                    dxp = abs(shot->x - pl->cx);
+                    dyp = abs(shot->y - pl->cy);
+                    if (dxp < (PLAYERWIDTH / 2) && dyp < (PLAYERWIDTH / 2))
+                    {
+                        ANIMS_StartAnim(A_SMALL_AIR_EXPLO, shot->x, shot->y);
+                        shot->doneflag = 1;
+                        OBJS_SubEnergyPlr(pi, lib->hits);
+                        if ((haptic) && (control == 2))
+                        {
+                            IPT_CalJoyRumbleLow();
+                        }
+                        break;
+                    }
                 }
             }
             break;

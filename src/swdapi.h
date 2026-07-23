@@ -226,6 +226,8 @@ void SWD_SetWindowPtr(int handle);
 void SWD_SetFieldSelect(int handle, int field_id, int opt);
 void SWD_SetFieldItem(int handle, int field_id, int item);
 int SWD_SetFieldText(int handle, int field_id, const char *in_text);
+void SWD_RepurposeAsButton(int handle, int field_id, int style_field_id,
+    int below_field_id, int gap);
 void SWD_DestroyWindow(int handle);
 int SWD_InitWindow(int handle);
 void SWD_SetActiveField(int handle, int field_id);

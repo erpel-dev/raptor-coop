@@ -33,7 +33,7 @@ char g_setup_path[PATH_MAX];
 int controltype;
 int musiccard;
 int soundfxcard;
-int fullscreen, aspect_ratio, txt_fullscreen, haptic, joy_ipt_MenuNew, sys_midi, winmm_mpu_device, core_dls_synth, core_midi_port, alsaclient, alsaport;
+int fullscreen, aspect_ratio, txt_fullscreen, haptic, joy_ipt_MenuNew, coop_mode, sys_midi, winmm_mpu_device, core_dls_synth, core_midi_port, alsaclient, alsaport;
 int keymoveup, keymovedown, keymoveleft, keymoveright, keyfire, keyspecial, keymega;
 static char soundfont[128];
 static char* sf;
@@ -172,6 +172,7 @@ void GetSetupSettings(void)
 	txt_fullscreen = INI_GetPreferenceLong("Video", "txt_fullscreen", 0);
 	haptic = INI_GetPreferenceLong("Setup", "Haptic", 1);
 	joy_ipt_MenuNew = INI_GetPreferenceLong("Setup", "joy_ipt_MenuNew", 0);
+	coop_mode = INI_GetPreferenceLong("Setup", "Coop", 0);
 	sys_midi = INI_GetPreferenceLong("Setup", "sys_midi", 0);
 	winmm_mpu_device = INI_GetPreferenceLong("Setup", "winmm_mpu_device", 0);
 	core_dls_synth = INI_GetPreferenceLong("Setup", "core_dls_synth", 1);
@@ -243,6 +244,7 @@ void SaveSettings(TXT_UNCAST_ARG(widget), void* user_data)
 
 	INI_PutPreferenceLong("Setup", "Haptic", haptic);                           //Save Additional Feature Haptic to SETUP.INI
 	INI_PutPreferenceLong("Setup", "joy_ipt_MenuNew", joy_ipt_MenuNew);         //Save Additional Feature joy_ipt_MenuNew to SETUP.INI
+	INI_PutPreferenceLong("Setup", "Coop", coop_mode);
 	INI_PutPreferenceLong("Setup", "sys_midi", sys_midi);                       //Save Additional Feature sys_midi to SETUP.INI
 	INI_PutPreferenceLong("Setup", "winmm_mpu_device", winmm_mpu_device);       //Save Additional Feature winmm_mpu_device to SETUP.INI
 	INI_PutPreferenceLong("Setup", "core_dls_synth", core_dls_synth);           //Save Additional Feature core_dls_synth to SETUP.INI
@@ -461,6 +463,7 @@ void AdditionalFeatures(TXT_UNCAST_ARG(widget), void* user_data)
 
 	txt_checkbox_t* hapticbox;
 	txt_checkbox_t* menunewbox;
+	txt_checkbox_t* coopbox;
 
 	fullscreenbox = TXT_NewCheckBox("Fullscreen", &fullscreen);
 	aspectratiobox = TXT_NewCheckBox("Aspect Ratio", &aspect_ratio);
@@ -476,6 +479,7 @@ void AdditionalFeatures(TXT_UNCAST_ARG(widget), void* user_data)
 	
 	hapticbox = TXT_NewCheckBox("Haptic (Game Controller Rumble Support)", &haptic);
 	menunewbox = TXT_NewCheckBox("New Joystick Menu Input", &joy_ipt_MenuNew);
+	coopbox = TXT_NewCheckBox("Local Co-op (2 players same screen)", &coop_mode);
 
 	sf = stringduplicate(sf);
 
@@ -520,10 +524,12 @@ void AdditionalFeatures(TXT_UNCAST_ARG(widget), void* user_data)
 
 	TXT_AddWidgets(window, TXT_NewSeparator("Controller"),
 		hapticbox,
-		menunewbox, NULL);
+		menunewbox,
+		coopbox, NULL);
 
 	TXT_SetHelpLabel(hapticbox, "Select Haptic for Controller On / Off");
 	TXT_SetHelpLabel(menunewbox, "Select New Joystick Menu Input On / Off");
+	TXT_SetHelpLabel(coopbox, "Same-screen 2-player co-op (P2: pad 2 or WASD)");
 
 	TXT_SetHelpLabel(close_button, " Press ESC to Abort");
 	TXT_SetHelpLabel(accept_button, " Press ENTER to Accept");

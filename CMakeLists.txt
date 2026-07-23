@@ -47,6 +47,7 @@ endif()
 
 include_directories(./include/textscreen/include/)
 include_directories(./include/TinySoundFont/)
+include_directories(./include/miniz/)
 
 add_subdirectory(./include/textscreen/include)
 
@@ -96,6 +97,9 @@ set(SOURCE_FILES
     src/mpualsa.cpp
     src/mpucorea.cpp
     src/mpucorem.cpp
+    src/assets_fetch.cpp
+    src/player.cpp
+    include/miniz/miniz.c
     )
 
 set(SOURCE_SETUP_FILES
@@ -143,6 +147,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     target_sources(raptor PRIVATE rsrc/resource.rc)
     target_link_libraries(raptor
         winmm.lib
+        urlmon.lib
         textscreen
         SDL2::SDL2main
         SDL2::SDL2
@@ -185,4 +190,26 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Android")
         target_link_options(raptorsetup PRIVATE -mconsole)
     endif()
 endif()
-   
+
+if(NOT ANDROID)
+    include(GNUInstallDirs)
+    install(TARGETS raptor RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    if(TARGET raptorsetup)
+        install(TARGETS raptorsetup RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
+    install(FILES
+        "${CMAKE_SOURCE_DIR}/SETUP(ADLIB).INI"
+        "${CMAKE_SOURCE_DIR}/SETUP(MIDI).INI"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/raptor
+    )
+    if(UNIX AND NOT APPLE)
+        install(FILES "${CMAKE_SOURCE_DIR}/rsrc/raptor.png"
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps
+            RENAME io.github.erpel_dev.Raptor.png)
+        install(FILES "${CMAKE_SOURCE_DIR}/pkg/flatpak/io.github.erpel_dev.Raptor.desktop"
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+        install(FILES "${CMAKE_SOURCE_DIR}/pkg/flatpak/io.github.erpel_dev.Raptor.metainfo.xml"
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
+    endif()
+endif()
+

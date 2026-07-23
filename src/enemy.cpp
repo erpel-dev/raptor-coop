@@ -18,6 +18,7 @@
 #include "input.h"
 #include "fileids.h"
 #include "entypes.h" 
+#include "player.h"
 
 #define NORM_SHOOT  -1
 #define START_SHOOT   0
@@ -871,8 +872,9 @@ void ENEMY_Think(
                 
                 if (sprite->kami == KAMI_CHASE)
                 {
-                    sprite->move.x2 = player_cx;
-                    sprite->move.y2 = player_cy;
+                    int ti = RAP_NearestPlayerTo(sprite->x + sprite->hlx, sprite->y + sprite->height / 2);
+                    sprite->move.x2 = players[ti].cx;
+                    sprite->move.y2 = players[ti].cy;
                     sprite->kami = KAMI_END;
                 }
                 else
@@ -1028,25 +1030,33 @@ void ENEMY_Think(
         
         if (!sprite->groundflag)
         {
-            if (player_cx > sprite->x && player_cx < sprite->x2)
+            int pi;
+            for (pi = 0; pi < num_players; pi++)
             {
-                if (player_cy > sprite->y && player_cy < sprite->y2)
+                Player *pl = &players[pi];
+                if (!pl->alive || pl->energy <= 0)
+                    continue;
+                if (pl->cx > sprite->x && pl->cx < sprite->x2)
                 {
-                    if ((haptic) && (control == 2))
+                    if (pl->cy > sprite->y && pl->cy < sprite->y2)
                     {
-                        IPT_CalJoyRumbleMedium();                                                            //Rumble when enemy hit
+                        if ((haptic) && (control == 2))
+                        {
+                            IPT_CalJoyRumbleMedium();
+                        }
+                        sprite->hits -= (PLAYERWIDTH / 2);
+                        if (sprite->width > sprite->height)
+                            suben = sprite->width;
+                        else
+                            suben = sprite->height;
+
+                        OBJS_SubEnergyPlr(pi, suben >> 2);
+                        x = pl->cx + (wrand() % 8) - 4;
+                        y = pl->cy + (wrand() % 8) - 4;
+                        ANIMS_StartAnim(A_SMALL_AIR_EXPLO, x, y);
+                        SND_Patch(FX_CRASH, 127);
+                        break;
                     }
-                    sprite->hits -= (PLAYERWIDTH / 2);
-                    if (sprite->width > sprite->height)
-                        suben = sprite->width;
-                    else
-                        suben = sprite->height;
-                    
-                    OBJS_SubEnergy(suben >> 2);
-                    x = player_cx + (wrand() % 8) - 4;
-                    y = player_cy + (wrand() % 8) - 4;
-                    ANIMS_StartAnim(A_SMALL_AIR_EXPLO, x, y);
-                    SND_Patch(FX_CRASH, 127);
                 }
             }
         }

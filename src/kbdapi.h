@@ -27,8 +27,9 @@
 #define SC_BACKSPACE 0x000e
 #define SC_ENTER 0x001c
 #define SC_RIGHT_SHIFT 0x0036
-#define SC_RIGHT_ALT 0xe038
-#define SC_RIGHT_CTRL 0xe010
+/* Distinct indices inside keyboard[256]. SDL maps RCtrl/RAlt here (not 0xe0xx). */
+#define SC_RIGHT_ALT 0x00b8
+#define SC_RIGHT_CTRL 0x009d
 #define SC_EXT_INSERT 0xe052
 #define SC_EXT_DELETE 0xe053
 #define SC_EXT_HOME 0xe047
@@ -103,6 +104,7 @@ extern int capslock;
 #define KBD_LASTASCII lastascii
 
 void KBD_Clear(void);
+void KBD_PollFromSDL(void);
 void KBD_Install(void);
 void KBD_End(void);
 int KBD_IsKey(int scancode);

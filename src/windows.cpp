@@ -24,6 +24,7 @@
 #include "windows.h"
 #include "fileids.h"
 #include "winids.h"
+#include "player.h"
 
 #define HANGAR_MISSION   0
 #define HANGAR_SUPPLIES  1
@@ -36,6 +37,7 @@
 int d_count;
 int hangto;
 int opt_detail;
+static int opt_kb_field = -1;
 
 int opt_vol[2] = { 127, 127 };
 int opt_window;
@@ -180,6 +182,13 @@ WIN_OptDraw(
     
     SWD_GetFieldXYL(opt_window, OPTS_VFX, &x, &y, &lx, &ly);
     GFX_PutSprite((char*)GLB_GetItem(FILE127_SLIDE_PIC), x + opt_vol[FX_VOL] - 2, y);
+
+    /* Pointer icon for co-op row (no dedicated PIC field in OPTS_SWD). */
+    if (opt_kb_field == 3)
+    {
+        SWD_GetFieldXYL(opt_window, OPTS_COOP, &x, &y, &lx, &ly);
+        GFX_PutSprite((char*)GLB_GetItem(FILE128_POINT_PIC), x - 24, y);
+    }
 }
 
 /***************************************************************************
@@ -192,7 +201,7 @@ WIN_Opts(
 {
     SWD_DLG dlg;
     int x, y, lx, ly;
-    int kbactive, patchflag, curd, cur_field;
+    int kbactive, patchflag, curd, curc, cur_field;
     int new_vol;
     int fpics[3] = {
         OPTS_PIC1, OPTS_PIC2, OPTS_PIC3
@@ -201,11 +210,17 @@ WIN_Opts(
         "LOW DETAIL",
         "HIGH DETAIL"
     };
+    char coop_lbl[2][16] = {
+        "CO-OP OFF",
+        "CO-OP ON"
+    };
 
     kbactive = 0;
     patchflag = 0;
     curd = opt_detail;
+    curc = coop_enabled ? 1 : 0;
     cur_field = 0;
+    opt_kb_field = -1;
 
     opt_vol[MUSIC_VOL] = music_volume;
     opt_vol[FX_VOL] = fx_volume;
@@ -215,6 +230,11 @@ WIN_Opts(
     SWD_SetWindowPtr(opt_window);
     SWD_SetFieldText(opt_window, OPTS_DETAIL, detail[curd]);
     SWD_SetWinDrawFunc(opt_window, WIN_OptDraw);
+
+    /* Music/sfx labels are baked into the options texture; reuse the unused
+       overlay text field as a co-op toggle in the empty gap above EXIT. */
+    SWD_RepurposeAsButton(opt_window, OPTS_COOP, OPTS_DETAIL, OPTS_VFX, 3);
+    SWD_SetFieldText(opt_window, OPTS_COOP, coop_lbl[curc]);
     
     SWD_SetFieldItem(opt_window, OPTS_PIC1, -1);
     SWD_SetFieldItem(opt_window, OPTS_PIC2, -1);
@@ -285,7 +305,7 @@ WIN_Opts(
             break;
         
         case SC_LEFT:
-            if (cur_field)
+            if (cur_field == 1 || cur_field == 2)
             {
                 if (cur_field == 2)
                     patchflag = 1;
@@ -298,7 +318,7 @@ WIN_Opts(
             break;
         
         case SC_RIGHT:
-            if (cur_field)
+            if (cur_field == 1 || cur_field == 2)
             {
                 if (cur_field == 2)
                     patchflag = 1;
@@ -314,24 +334,28 @@ WIN_Opts(
             if (kbactive && cur_field > 0)
                 cur_field--;
             kbactive = 1;
+            opt_kb_field = cur_field;
             SND_Patch(FX_SWEP, 127);
             SWD_SetFieldItem(opt_window, OPTS_PIC1, -1);
             SWD_SetFieldItem(opt_window, OPTS_PIC2, -1);
             SWD_SetFieldItem(opt_window, OPTS_PIC3, -1);
-            SWD_SetFieldItem(opt_window, fpics[cur_field], FILE128_POINT_PIC);
+            if (cur_field < 3)
+                SWD_SetFieldItem(opt_window, fpics[cur_field], FILE128_POINT_PIC);
             SWD_ShowAllWindows();
             GFX_DisplayUpdate();
             break;
         
         case SC_DOWN:
-            if (kbactive && cur_field < 2)
+            if (kbactive && cur_field < 3)
                 cur_field++;
             kbactive = 1;
+            opt_kb_field = cur_field;
             SND_Patch(FX_SWEP, 127);
             SWD_SetFieldItem(opt_window, OPTS_PIC1, -1);
             SWD_SetFieldItem(opt_window, OPTS_PIC2, -1);
             SWD_SetFieldItem(opt_window, OPTS_PIC3, -1);
-            SWD_SetFieldItem(opt_window, fpics[cur_field], FILE128_POINT_PIC);
+            if (cur_field < 3)
+                SWD_SetFieldItem(opt_window, fpics[cur_field], FILE128_POINT_PIC);
             SWD_ShowAllWindows();
             GFX_DisplayUpdate();
             break;
@@ -342,6 +366,12 @@ WIN_Opts(
                 dlg.cur_act = S_FLD_COMMAND;
                 dlg.cur_cmd = F_SELECT;
                 dlg.field = OPTS_DETAIL;
+            }
+            else if (cur_field == 3)
+            {
+                dlg.cur_act = S_FLD_COMMAND;
+                dlg.cur_cmd = F_SELECT;
+                dlg.field = OPTS_COOP;
             }
             break;
         }
@@ -389,6 +419,7 @@ WIN_Opts(
         }
         
         opt_detail = curd;
+        coop_enabled = curc;
         
         if (fx_volume != opt_vol[FX_VOL])
             fx_volume = opt_vol[FX_VOL];
@@ -415,6 +446,7 @@ WIN_Opts(
                     INI_PutPreferenceLong("SoundFX", "Volume", fx_volume);
                 }
                 INI_PutPreferenceLong("Setup", "Detail", opt_detail);
+                INI_PutPreferenceLong("Setup", "Coop", coop_enabled);
                 SND_Patch(FX_SWEP, 127);
                 goto exit_opts;
             
@@ -422,6 +454,14 @@ WIN_Opts(
                 SND_Patch(FX_SWEP, 127);
                 curd ^= 1;
                 SWD_SetFieldText(opt_window, OPTS_DETAIL, detail[curd]);
+                SWD_ShowAllWindows();
+                GFX_DisplayUpdate();
+                break;
+
+            case OPTS_COOP:
+                SND_Patch(FX_SWEP, 127);
+                curc ^= 1;
+                SWD_SetFieldText(opt_window, OPTS_COOP, coop_lbl[curc]);
                 SWD_ShowAllWindows();
                 GFX_DisplayUpdate();
                 break;
@@ -1851,7 +1891,7 @@ WIN_MainLoop(
         
         retraceflag = 1;
         
-        if (OBJS_GetAmt(S_ENERGY) <= 0)
+        if (RAP_LivingPlayerCount() <= 0)
         {
             ingameflag = 0;
             SND_PlaySong(FILE05d_RAP5_MUS, 1, 1);

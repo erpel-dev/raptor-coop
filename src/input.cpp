@@ -10,6 +10,7 @@
 #include "input.h"
 #include "i_video.h"
 #include "joyapi.h"
+#include "player.h"
 
 #define MAX_ADDX 10
 #define MAX_ADDY 8
@@ -419,34 +420,349 @@ IPT_MovePlayer(
     void
 )
 {
-    static int oldx = PLAYERINITX;
-    int delta;
-    
-    if (demo_mode == DEMO_PLAYBACK)
-        return;
-    
-    if (!control_pause)
-    {
-        switch (control)
-        {
-        case I_KEYBOARD:
-        default:
-            IPT_GetKeyBoard();
-            break;
-        
-        case I_JOYSTICK:
-            IPT_GetJoyStick();
-            break;
+    IPT_MovePlayerPlr(0);
+}
 
-        case I_MOUSE:
-            IPT_GetMouse();
-            break;
+/* Apply stick/dpad style acceleration into g_addx/g_addy from a JoyPadState. */
+static void
+IPT_ApplyJoyPadMove(
+    JoyPadState *jp
+)
+{
+    int sx = jp->StickX;
+    int sy = jp->StickY;
+
+    if (jp->AButton)
+    {
+        if (AButtonconvert == j_lookup[0]) buttons[0] = 1;
+        if (AButtonconvert == j_lookup[1]) buttons[1] = 1;
+        if (AButtonconvert == j_lookup[2]) buttons[2] = 1;
+        if (AButtonconvert == j_lookup[3]) buttons[3] = 1;
+    }
+    if (jp->BButton)
+    {
+        if (BButtonconvert == j_lookup[0]) buttons[0] = 1;
+        if (BButtonconvert == j_lookup[1]) buttons[1] = 1;
+        if (BButtonconvert == j_lookup[2]) buttons[2] = 1;
+        if (BButtonconvert == j_lookup[3]) buttons[3] = 1;
+    }
+    if (jp->XButton)
+    {
+        if (XButtonconvert == j_lookup[0]) buttons[0] = 1;
+        if (XButtonconvert == j_lookup[1]) buttons[1] = 1;
+        if (XButtonconvert == j_lookup[2]) buttons[2] = 1;
+        if (XButtonconvert == j_lookup[3]) buttons[3] = 1;
+    }
+    if (jp->YButton)
+    {
+        if (YButtonconvert == j_lookup[0]) buttons[0] = 1;
+        if (YButtonconvert == j_lookup[1]) buttons[1] = 1;
+        if (YButtonconvert == j_lookup[2]) buttons[2] = 1;
+        if (YButtonconvert == j_lookup[3]) buttons[3] = 1;
+    }
+
+    if (jp->TriggerRight > 0)
+        buttons[0] = 1;
+    if (jp->TriggerLeft > 0)
+        buttons[1] = 1;
+    if (jp->LeftShoulder)
+        buttons[2] = 1;
+    if (jp->RightShoulder)
+        buttons[3] = 1;
+
+    if (jp->Left)
+    {
+        if (g_addx >= 0)
+            g_addx = -1;
+        g_addx--;
+        if (-g_addx > MAX_ADDX)
+            g_addx = -MAX_ADDX;
+    }
+    else if (jp->Right)
+    {
+        if (g_addx <= 0)
+            g_addx = 1;
+        g_addx++;
+        if (g_addx > MAX_ADDX)
+            g_addx = MAX_ADDX;
+    }
+    else
+    {
+        if (g_addx)
+            g_addx /= 2;
+    }
+
+    if (jp->Up)
+    {
+        if (g_addy >= 0)
+            g_addy = -1;
+        g_addy--;
+        if (-g_addy > MAX_ADDY)
+            g_addy = -MAX_ADDY;
+    }
+    else if (jp->Down)
+    {
+        if (g_addy <= 0)
+            g_addy = 1;
+        g_addy++;
+        if (g_addy > MAX_ADDY)
+            g_addy = MAX_ADDY;
+    }
+    else
+    {
+        if (g_addy)
+            g_addy /= 2;
+    }
+
+    if (sx != 0)
+    {
+        if (sx > 0)
+            sx *= 2;
+        if (sx > MAX_ADDX)
+            sx = MAX_ADDX;
+        if (sx < 0)
+            sx *= 2;
+        if (sx < -MAX_ADDX)
+            sx = -MAX_ADDX;
+        g_addx = sx;
+    }
+
+    if (sy != 0)
+    {
+        if (sy > 0)
+            sy *= 2;
+        if (sy > MAX_ADDY)
+            sy = MAX_ADDY;
+        if (sy < 0)
+            sy *= 2;
+        if (sy < -MAX_ADDY)
+            sy = -MAX_ADDY;
+        g_addy = sy;
+    }
+}
+
+/* P2 fallback keys when no dedicated gamepad is available.
+ * Left-side cluster: WASD + Left Ctrl/Alt (pairs with P1 arrows + Right Ctrl). */
+static void
+IPT_GetP2KeyBoard(
+    void
+)
+{
+    if (KBD_Key(SC_A) || KBD_Key(SC_D))
+    {
+        if (KBD_Key(SC_A))
+        {
+            if (g_addx >= 0)
+                g_addx = -1;
+            g_addx--;
+            if (-g_addx > MAX_ADDX)
+                g_addx = -MAX_ADDX;
+        }
+        else if (KBD_Key(SC_D))
+        {
+            if (g_addx <= 0)
+                g_addx = 1;
+            g_addx++;
+            if (g_addx > MAX_ADDX)
+                g_addx = MAX_ADDX;
         }
     }
-    
+    else if (g_addx)
+        g_addx /= 2;
+
+    if (KBD_Key(SC_W) || KBD_Key(SC_S))
+    {
+        if (KBD_Key(SC_W))
+        {
+            if (g_addy >= 0)
+                g_addy = -1;
+            g_addy--;
+            if (-g_addy > MAX_ADDY)
+                g_addy = -MAX_ADDY;
+        }
+        else if (KBD_Key(SC_S))
+        {
+            if (g_addy <= 0)
+                g_addy = 1;
+            g_addy++;
+            if (g_addy > MAX_ADDY)
+                g_addy = MAX_ADDY;
+        }
+    }
+    else if (g_addy)
+        g_addy /= 2;
+
+    if (KBD_Key(SC_CTRL))
+        buttons[0] = 1;
+    if (KBD_Key(SC_ALT))
+        buttons[1] = 1;
+    if (KBD_Key(SC_M))
+        buttons[2] = 1;
+    if (KBD_Key(SC_N))
+        buttons[3] = 1;
+}
+
+void
+IPT_SampleButtonsPlr(
+    int pidx
+)
+{
+    Player *pl;
+    JoyPadState jp;
+    int pad;
+    int fire_key, firesp_key;
+
+    if (pidx < 0 || pidx >= num_players)
+        return;
+
+    pl = &players[pidx];
+    pl->buttons[0] = pl->buttons[1] = pl->buttons[2] = pl->buttons[3] = 0;
+
+    if (pidx == 0)
+    {
+        /* In co-op, put P1 fire on Right Ctrl/Alt (arrow-key side). */
+        if (num_players > 1)
+        {
+            fire_key = SC_RIGHT_CTRL;
+            firesp_key = SC_RIGHT_ALT;
+        }
+        else
+        {
+            fire_key = k_Fire;
+            firesp_key = k_FireSp;
+        }
+
+        if (KBD_Key(fire_key))
+            pl->buttons[0] = 1;
+        /* Enter as extra P1 fire in co-op — avoids arrow+RCtrl keyboard ghosting. */
+        if (num_players > 1 && KBD_Key(SC_ENTER))
+            pl->buttons[0] = 1;
+        if (KBD_Key(firesp_key))
+            pl->buttons[1] = 1;
+        if (KBD_Key(k_ChangeSp))
+            pl->buttons[2] = 1;
+        if (KBD_Key(k_Mega))
+            pl->buttons[3] = 1;
+
+        if (control == I_JOYSTICK || (control == I_KEYBOARD && joy_num_pads >= 1 && num_players == 1))
+        {
+            IPT_ReadJoyPad(0, &jp);
+            buttons[0] = buttons[1] = buttons[2] = buttons[3] = 0;
+            g_addx = pl->addx;
+            g_addy = pl->addy;
+            IPT_ApplyJoyPadMove(&jp);
+            pl->buttons[0] |= buttons[0];
+            pl->buttons[1] |= buttons[1];
+            pl->buttons[2] |= buttons[2];
+            pl->buttons[3] |= buttons[3];
+        }
+        return;
+    }
+
+    /* Player 2: prefer a dedicated gamepad. */
+    pad = (control == I_JOYSTICK) ? 1 : 0;
+    if (pad < joy_num_pads)
+    {
+        IPT_ReadJoyPad(pad, &jp);
+        buttons[0] = buttons[1] = buttons[2] = buttons[3] = 0;
+        g_addx = pl->addx;
+        g_addy = pl->addy;
+        IPT_ApplyJoyPadMove(&jp);
+        pl->buttons[0] = buttons[0];
+        pl->buttons[1] = buttons[1];
+        pl->buttons[2] = buttons[2];
+        pl->buttons[3] = buttons[3];
+        pl->addx = g_addx;
+        pl->addy = g_addy;
+    }
+    else
+    {
+        /* No second pad: WASD + Left Ctrl/Alt. */
+        buttons[0] = buttons[1] = buttons[2] = buttons[3] = 0;
+        g_addx = pl->addx;
+        g_addy = pl->addy;
+        IPT_GetP2KeyBoard();
+        pl->buttons[0] = buttons[0];
+        pl->buttons[1] = buttons[1];
+        pl->buttons[2] = buttons[2];
+        pl->buttons[3] = buttons[3];
+        pl->addx = g_addx;
+        pl->addy = g_addy;
+    }
+}
+
+/***************************************************************************
+IPT_MovePlayerPlr() - Move a specific co-op player
+ ***************************************************************************/
+void
+IPT_MovePlayerPlr(
+    int pidx
+)
+{
+    Player *pl;
+    int delta;
+
+    if (demo_mode == DEMO_PLAYBACK)
+        return;
+
+    if (pidx < 0 || pidx >= num_players)
+        return;
+
+    pl = &players[pidx];
+    if (!pl->alive || pl->energy <= 0)
+        return;
+
+    RAP_SyncPlayerGlobalsFrom(pidx);
+
+    if (!control_pause)
+    {
+        buttons[0] = buttons[1] = buttons[2] = buttons[3] = 0;
+        g_addx = pl->addx;
+        g_addy = pl->addy;
+
+        if (pidx == 0)
+        {
+            switch (control)
+            {
+            case I_KEYBOARD:
+            default:
+                /* Sample buttons first, then apply move from held keys. */
+                IPT_SampleButtonsPlr(0);
+                g_addx = pl->addx;
+                g_addy = pl->addy;
+                IPT_GetKeyBoard();
+                break;
+
+            case I_JOYSTICK:
+            {
+                JoyPadState jp;
+                IPT_ReadJoyPad(0, &jp);
+                IPT_ApplyJoyPadMove(&jp);
+                pl->buttons[0] = buttons[0];
+                pl->buttons[1] = buttons[1];
+                pl->buttons[2] = buttons[2];
+                pl->buttons[3] = buttons[3];
+                break;
+            }
+
+            case I_MOUSE:
+                IPT_GetMouse();
+                IPT_SampleButtonsPlr(0);
+                break;
+            }
+        }
+        else
+        {
+            /* SampleButtonsPlr updates pl->addx/addy and fills g_addx/g_addy. */
+            IPT_SampleButtonsPlr(pidx);
+            g_addx = pl->addx;
+            g_addy = pl->addy;
+        }
+    }
+
     playerx += g_addx;
     playery += g_addy;
-    
+
     if (startendwave == -1)
     {
         if (playery < MINPLAYERY)
@@ -459,7 +775,7 @@ IPT_MovePlayer(
             playery = MAXPLAYERY;
             g_addy = 0;
         }
-        
+
         if (playerx < PLAYERMINX)
         {
             playerx = PLAYERMINX;
@@ -471,19 +787,19 @@ IPT_MovePlayer(
             g_addx = 0;
         }
     }
-    
-    delta = abs(playerx - oldx);
+
+    delta = abs(playerx - pl->oldx);
     delta >>= 2;
-    
+
     if (delta > 3)
         delta = 3;
-    
-    if (playerx < oldx)
+
+    if (playerx < pl->oldx)
     {
         if (playerbasepic + delta > playerpic)
             playerpic++;
     }
-    else if (playerx > oldx)
+    else if (playerx > pl->oldx)
     {
         if (playerbasepic - delta < playerpic)
             playerpic--;
@@ -495,11 +811,14 @@ IPT_MovePlayer(
         else if (playerpic < playerbasepic)
             playerpic++;
     }
-    
-    oldx = playerx;
-    
+
+    pl->oldx = playerx;
     player_cx = playerx + (PLAYERWIDTH / 2);
     player_cy = playery + (PLAYERHEIGHT / 2);
+
+    pl->addx = g_addx;
+    pl->addy = g_addy;
+    RAP_StorePlayerGlobalsTo(pidx);
 }
 
 /***************************************************************************
@@ -522,10 +841,18 @@ IPT_FMovePlayer(
     int addy               // INPUT : add to y pos
 )
 {
+    int i = RAP_FirstLivingPlayer();
+    RAP_SyncPlayerGlobalsFrom(i);
     g_addx = addx;
     g_addy = addy;
-    
-    IPT_MovePlayer();
+    players[i].addx = addx;
+    players[i].addy = addy;
+
+    playerx += g_addx;
+    playery += g_addy;
+    player_cx = playerx + (PLAYERWIDTH / 2);
+    player_cy = playery + (PLAYERHEIGHT / 2);
+    RAP_StorePlayerGlobalsTo(i);
 }
 
 /***************************************************************************
@@ -540,6 +867,12 @@ IPT_LoadPrefs(
     control = INI_GetPreferenceLong("Setup", "Control", 0);
     haptic = INI_GetPreferenceLong("Setup", "Haptic", 1);
     joy_ipt_MenuNew = INI_GetPreferenceLong("Setup", "joy_ipt_MenuNew", 0);
+    coop_enabled = INI_GetPreferenceLong("Setup", "Coop", 0);
+    {
+        const char *env = getenv("RAPTOR_COOP");
+        if (env && env[0] == '1')
+            coop_enabled = 1;
+    }
     
     k_Up = INI_GetPreferenceLong("Keyboard", "MoveUp", SC_UP);
     k_Down = INI_GetPreferenceLong("Keyboard", "MoveDn", SC_DOWN);
@@ -559,3 +892,4 @@ IPT_LoadPrefs(
     j_lookup[2] = INI_GetPreferenceLong("JoyStick", "ChangeSp", 2);
     j_lookup[3] = INI_GetPreferenceLong("JoyStick", "MegaFire", 3);
 }
+

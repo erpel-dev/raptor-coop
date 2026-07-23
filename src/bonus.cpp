@@ -8,6 +8,7 @@
 #include "fx.h"
 #include "fileids.h"
 #include "entypes.h"
+#include "player.h"
 
 BONUS bons[MAX_BONUS];
 BONUS first_bonus, last_bonus;
@@ -175,12 +176,8 @@ BONUS_Think(
     int x, y, x2, y2;
     BONUS *cur;
     static int gcnt;
+    int pi;
 
-    x = playerx;
-    y = playery;
-    x2 = playerx + PLAYERWIDTH;
-    y2 = playery + PLAYERHEIGHT;
-    
     for (cur = first_bonus.next; &last_bonus != cur; cur = cur->next)
     {
         cur->item = cur->lib->item + cur->curframe;
@@ -211,26 +208,38 @@ BONUS_Think(
         if (cur->curglow >= 4)
             cur->curglow = 0;
         
-        if (cur->x > x && cur->x < x2 && cur->y > y && cur->y < y2)
+        for (pi = 0; pi < num_players; pi++)
         {
-            if (!cur->dflag && OBJS_GetAmt(S_ENERGY) > 0)
+            Player *pl = &players[pi];
+            if (!pl->alive || pl->energy <= 0)
+                continue;
+            x = pl->x;
+            y = pl->y;
+            x2 = pl->x + PLAYERWIDTH;
+            y2 = pl->y + PLAYERHEIGHT;
+
+            if (cur->x > x && cur->x < x2 && cur->y > y && cur->y < y2)
             {
-                SND_Patch(FX_BONUS, 127);
-                
-                if (cur->type == S_ENERGY)
-                    OBJS_AddEnergy(MAX_SHIELD / 4);
-                else
-                    OBJS_Add(cur->type);
-                
-                if (cur->lib->moneyflag)
+                if (!cur->dflag)
                 {
-                    cur->dflag = 1;
-                    cur->countdown = 50;
-                }
-                else
-                {
-                    cur = BONUS_Remove(cur);
-                    continue;
+                    SND_Patch(FX_BONUS, 127);
+
+                    if (cur->type == S_ENERGY)
+                        OBJS_AddEnergyPlr(pi, MAX_SHIELD / 4);
+                    else
+                        OBJS_Add(cur->type);
+
+                    if (cur->lib->moneyflag)
+                    {
+                        cur->dflag = 1;
+                        cur->countdown = 50;
+                    }
+                    else
+                    {
+                        cur = BONUS_Remove(cur);
+                        goto next_bonus;
+                    }
+                    break;
                 }
             }
         }
@@ -250,6 +259,8 @@ BONUS_Think(
             cur = BONUS_Remove(cur);
             continue;
         }
+    next_bonus:
+        ;
     }
     
     gcnt++;

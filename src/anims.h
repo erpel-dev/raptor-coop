@@ -42,6 +42,7 @@ typedef struct ANIMS_S
     int groundflag;
     SPRITE_SHIP *en;
     int edone;
+    int player;            /* co-op ship for playerflag anims (-1 = first living) */
 }ANIMS;
 
 #define A_LARGE_GROUND_EXPLO1  0
@@ -74,6 +75,7 @@ void ANIMS_Init(void);
 void ANIMS_CachePics(void);
 void ANIMS_FreePics(void);
 void ANIMS_StartAnim(int handle, int x, int y);
+void ANIMS_StartPlayerAnim(int handle, int x, int y, int pidx);
 void ANIMS_StartGAnim(int handle, int x, int y);
 void ANIMS_StartEAnim(SPRITE_SHIP *en, int handle, int x, int y);
 void ANIMS_StartAAnim(int handle, int x, int y);

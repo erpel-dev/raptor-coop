@@ -1,0 +1,18 @@
+[Desktop Entry]
+Name=Raptor
+GenericName=Shoot 'em up
+Comment=Reversed-engineered source port of Raptor: Call Of The Shadows
+Exec=raptor
+Icon=io.github.erpel_dev.Raptor
+Terminal=false
+Type=Application
+Categories=Game;ActionGame;
+Keywords=raptor;shooter;apogee;
+StartupNotify=true
+StartupWMClass=raptor
+
+Actions=Setup;
+
+[Desktop Action Setup]
+Name=Raptor Setup
+Exec=raptorsetup

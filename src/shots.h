@@ -2,8 +2,9 @@
 
 #include "rap.h"
 #include "gfxapi.h"
+#include "player.h"
 
-#define MAX_SHOTS 70
+#define MAX_SHOTS 120
 
 typedef enum
 {
@@ -34,7 +35,7 @@ typedef struct
     int startframe;                         // START ANIM ON FRAME
     int numframes;                          // NUMBER OF FRAMES OF ANIM
     int shoot_rate;                         // SHOOT EVERY (N) FRAMES
-    int cur_shoot;                          // HOLDS FRAME COUNT DOWN
+    int cur_shoot[MAX_PLAYERS];             // per-player frame count down
     int delayflag;                          // DEALAYED ANIM START
     int smoke;                              // SMOKE TRAIL
     int use_plot;                           // TRUE = PLOT X,Y ( SLOWER )
@@ -65,9 +66,11 @@ typedef struct SHOTS_S
     int starty;                             // PLAYER Y OFFSET;
     SHOT_LIB *lib;
     int cnt;
+    int owner;                              // co-op player index that fired
 }SHOTS;
 
 extern char *lashit[4];
+extern int g_shot_owner;
 
 int SHOTS_PlayerShoot(int type);
 void SHOTS_Clear(void);

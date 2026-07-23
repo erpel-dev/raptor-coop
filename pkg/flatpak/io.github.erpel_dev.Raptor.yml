@@ -1,0 +1,25 @@
+app-id: io.github.erpel_dev.Raptor
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+command: raptor
+
+finish-args:
+  - --device=all
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --share=network
+  - --socket=pulseaudio
+  - --filesystem=xdg-run/pipewire-0:ro
+
+modules:
+  - name: raptor
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+    sources:
+      # In-tree packaging: build from the repository that contains this manifest.
+      # For Flathub submission, replace this with a git/archive source.
+      - type: dir
+        path: ../..

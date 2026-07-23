@@ -17,6 +17,7 @@ extern int buttons[4];
 extern int control;
 extern int haptic;
 extern int joy_ipt_MenuNew;
+extern int g_addx, g_addy;
 
 void IPT_LoadPrefs(void);
 void IPT_GetButtons(void);
@@ -24,5 +25,7 @@ void IPT_Start(void);
 void IPT_PauseControl(int flag);
 void IPT_FMovePlayer(int addx, int addy);
 void IPT_MovePlayer(void);
+void IPT_MovePlayerPlr(int pidx);
+void IPT_SampleButtonsPlr(int pidx);
 void IPT_End(void);
 void IPT_Init(void);

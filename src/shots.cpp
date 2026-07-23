@@ -11,12 +11,15 @@
 #include "objects.h"
 #include "fileids.h"
 #include "entypes.h"
+#include "player.h"
 
 SHOTS shots[MAX_SHOTS];
 
 SHOTS first_shots, last_shots;
 
 SHOTS *free_shots;
+
+int g_shot_owner = 0;
 
 int shotnum;
 int shothigh;
@@ -87,6 +90,7 @@ SHOTS
     news->prev = last_shots.prev;
     last_shots.prev = news;
     news->prev->next = news;
+    news->owner = g_shot_owner;
     
     return news;
 }
@@ -159,7 +163,7 @@ SHOTS_Init(
     slib->numframes = 4;
     slib->delayflag = 0;
     slib->shoot_rate = 2;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->move_flag = 1;
     slib->fplrx = 0;
     slib->fplry = 0;
@@ -187,7 +191,7 @@ SHOTS_Init(
     slib->numframes = 2;
     slib->delayflag = 0;
     slib->shoot_rate = 10;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->move_flag = 1;
     slib->fplrx = 0;
     slib->fplry = 0;
@@ -215,7 +219,7 @@ SHOTS_Init(
     slib->numframes = 2;
     slib->delayflag = 0;
     slib->shoot_rate = 4;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->move_flag = 1;
     slib->fplrx = 0;
     slib->fplry = 0;
@@ -243,7 +247,7 @@ SHOTS_Init(
     slib->numframes = 3;
     slib->delayflag = 1;
     slib->shoot_rate = 10;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->use_plot = 1;
     slib->move_flag = 1;
     slib->fplrx = 0;
@@ -272,7 +276,7 @@ SHOTS_Init(
     slib->numframes = 4;
     slib->delayflag = 0;
     slib->shoot_rate = 1;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->use_plot = 1;
     slib->move_flag = 1;
     slib->fplrx = 0;
@@ -301,7 +305,7 @@ SHOTS_Init(
     slib->numframes = 0;
     slib->delayflag = 0;
     slib->shoot_rate = 6;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->use_plot = 0;
     slib->move_flag = 0;
     slib->fplrx = 0;
@@ -330,7 +334,7 @@ SHOTS_Init(
     slib->numframes = 2;
     slib->delayflag = 0;
     slib->shoot_rate = 5;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->smoke = 1;
     slib->move_flag = 1;
     slib->fplrx = 0;
@@ -359,7 +363,7 @@ SHOTS_Init(
     slib->numframes = 2;
     slib->delayflag = 0;
     slib->shoot_rate = 10;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->smoke = 1;
     slib->move_flag = 1;
     slib->fplrx = 0;
@@ -388,7 +392,7 @@ SHOTS_Init(
     slib->numframes = 2;
     slib->delayflag = 0;
     slib->shoot_rate = 20;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->smoke = 1;
     slib->move_flag = 1;
     slib->fplrx = 0;
@@ -417,7 +421,7 @@ SHOTS_Init(
     slib->numframes = 1;
     slib->delayflag = 0;
     slib->shoot_rate = 30;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->smoke = 0;
     slib->move_flag = 1;
     slib->fplrx = 0;
@@ -446,7 +450,7 @@ SHOTS_Init(
     slib->numframes = 6;
     slib->delayflag = 0;
     slib->shoot_rate = 2;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->smoke = 0;
     slib->move_flag = 1;
     slib->fplrx = 0;
@@ -475,7 +479,7 @@ SHOTS_Init(
     slib->numframes = 4;
     slib->delayflag = 0;
     slib->shoot_rate = 60;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->smoke = 0;
     slib->use_plot = 1;
     slib->move_flag = 1;
@@ -505,7 +509,7 @@ SHOTS_Init(
     slib->numframes = 2;
     slib->delayflag = 0;
     slib->shoot_rate = 3;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->smoke = 0;
     slib->use_plot = 0;
     slib->move_flag = 1;
@@ -535,7 +539,7 @@ SHOTS_Init(
     slib->numframes = 4;
     slib->delayflag = 0;
     slib->shoot_rate = 7;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->smoke = 0;
     slib->use_plot = 0;
     slib->move_flag = 0;
@@ -565,7 +569,7 @@ SHOTS_Init(
     slib->numframes = 4;
     slib->delayflag = 0;
     slib->shoot_rate = 7;
-    slib->cur_shoot = 0;
+    memset(slib->cur_shoot, 0, sizeof(slib->cur_shoot));
     slib->smoke = 0;
     slib->use_plot = 0;
     slib->move_flag = 0;
@@ -601,16 +605,23 @@ SHOTS_PlayerShoot(
     if (type == -1)
         EXIT_Error("SHOTS_PlayerShoot() type = EMPTY  ");
     
-    if (lib->cur_shoot)
-        return 0;
-    
-    lib->cur_shoot = lib->shoot_rate;
+    RAP_SyncPlayerGlobalsFrom(g_shot_owner);
+
+    {
+        int oi = g_shot_owner;
+        if (oi < 0 || oi >= MAX_PLAYERS)
+            oi = 0;
+        if (lib->cur_shoot[oi])
+            return 0;
+        lib->cur_shoot[oi] = lib->shoot_rate;
+    }
     
     cur = SHOTS_Get();
     
     if (!cur)
         return 0;
-    
+
+    /* Pose already synced above for this owner. */
     switch (type)
     {
     default:
@@ -633,7 +644,7 @@ SHOTS_PlayerShoot(
         cur->move.y2 = 0;
         cur->startx = player_cx;
         cur->starty = player_cy;
-        ANIMS_StartAnim(A_PLAYER_SHOOT, o_gun1[playerpic], 0);
+        ANIMS_StartPlayerAnim(A_PLAYER_SHOOT, o_gun1[playerpic], 0, g_shot_owner);
         
         cur = SHOTS_Get();
         if (!cur)
@@ -651,7 +662,7 @@ SHOTS_PlayerShoot(
         cur->move.y2 = 0;
         cur->startx = player_cx;
         cur->starty = player_cy;
-        ANIMS_StartAnim(A_PLAYER_SHOOT, -o_gun1[playerpic] - 1, 0);
+        ANIMS_StartPlayerAnim(A_PLAYER_SHOOT, -o_gun1[playerpic] - 1, 0, g_shot_owner);
         break;
     
     case S_PLASMA_GUNS:
@@ -803,7 +814,7 @@ SHOTS_PlayerShoot(
         cur->move.y2 = 0;
         cur->startx = player_cx;
         cur->starty = player_cy;
-        ANIMS_StartAnim(A_PLAYER_SHOOT, o_gun2[playerpic], 1);
+        ANIMS_StartPlayerAnim(A_PLAYER_SHOOT, o_gun2[playerpic], 1, g_shot_owner);
         
         cur = SHOTS_Get();
         if (!cur)
@@ -820,7 +831,7 @@ SHOTS_PlayerShoot(
         cur->move.y2 = 0;
         cur->startx = player_cx;
         cur->starty = player_cy;
-        ANIMS_StartAnim(A_PLAYER_SHOOT, -o_gun2[playerpic] - 1, 1);
+        ANIMS_StartPlayerAnim(A_PLAYER_SHOOT, -o_gun2[playerpic] - 1, 1, g_shot_owner);
         break;
     
     case S_AIR_MISSLE:
@@ -1012,8 +1023,12 @@ SHOTS_Think(
     lib = shot_lib;
     for (i = 0; i <= LAST_WEAPON; i++, lib++)
     {
-        if (lib->cur_shoot > 0)
-            lib->cur_shoot--;
+        int pi;
+        for (pi = 0; pi < MAX_PLAYERS; pi++)
+        {
+            if (lib->cur_shoot[pi] > 0)
+                lib->cur_shoot[pi]--;
+        }
     }
 
     for (shot = first_shots.next; &last_shots != shot; shot = shot->next)
@@ -1049,7 +1064,8 @@ SHOTS_Think(
             
             for (enemy = first_enemy.next; &last_enemy != enemy; enemy = enemy->next)
             {
-                if (shot->x > enemy->x && shot->x < enemy->x2 && enemy->y < player_cy && enemy->y > -30)
+                int ocy = players[shot->owner].cy;
+                if (shot->x > enemy->x && shot->x < enemy->x2 && enemy->y < ocy && enemy->y > -30)
                 {
                     enemy->hits -= lib->hits;
                     
@@ -1064,10 +1080,10 @@ SHOTS_Think(
         }
         
         if (lib->fplrx)
-            shot->x += player_cx - shot->startx;
+            shot->x += players[shot->owner].cx - shot->startx;
         
         if (lib->fplry)
-            shot->y += player_cy - shot->starty;
+            shot->y += players[shot->owner].cy - shot->starty;
         
         if ((shot->y + 16 < 0) || (shot->x < 0) || (shot->x > 320) || (shot->y > 200))
         {
@@ -1216,7 +1232,7 @@ SHOTS_Think(
                         enemy->hits -= lib->hits;
                     }
                     startfadeflag = 1;
-                    ANIMS_StartAnim(A_SUPER_SHIELD, 0, 0);
+                    ANIMS_StartPlayerAnim(A_SUPER_SHIELD, 0, 0, shot->owner);
                     shot = SHOTS_Remove(shot);
                     continue;
                 
@@ -1274,9 +1290,9 @@ SHOTS_Display(
             break;
         
         case S_LINE:
-            GFX_Line(player_cx + 1, player_cy, shot->move.x, shot->move.y, 69);
-            GFX_Line(player_cx - 1, player_cy, shot->move.x, shot->move.y, 69);
-            GFX_Line(player_cx, player_cy, shot->move.x, shot->move.y, 64);
+            GFX_Line(players[shot->owner].cx + 1, players[shot->owner].cy, shot->move.x, shot->move.y, 69);
+            GFX_Line(players[shot->owner].cx - 1, players[shot->owner].cy, shot->move.x, shot->move.y, 69);
+            GFX_Line(players[shot->owner].cx, players[shot->owner].cy, shot->move.x, shot->move.y, 64);
             shot = SHOTS_Remove(shot);
             break;
         

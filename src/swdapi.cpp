@@ -2739,7 +2739,7 @@ SWD_SetFieldValue(
 /***************************************************************************
 SWD_SetFieldSelect() - Sets Field Selectable status
  ***************************************************************************/
-void 
+void
 SWD_SetFieldSelect(
     int handle,           // INPUT : window handle
     int field_id,         // INPUT : field handle
@@ -2749,10 +2749,54 @@ SWD_SetFieldSelect(
     SWIN *curwin;
     SFIELD *curfld;
     curwin = g_wins[handle].win;
-    
+
     curfld = (SFIELD*)((char*)curwin + LE_LONG(curwin->fldofs)) + field_id;
-    
+
     curfld->selectable = opt;
+}
+
+/***************************************************************************
+SWD_RepurposeAsButton() - Turn a field into a textured button (runtime UI)
+Places it under below_field_id, matching style_field_id size/look.
+ ***************************************************************************/
+void
+SWD_RepurposeAsButton(
+    int handle,
+    int field_id,
+    int style_field_id,
+    int below_field_id,
+    int gap
+)
+{
+    SWIN *curwin;
+    SFIELD *curfld;
+    SFIELD *style;
+    SFIELD *below;
+
+    curwin = g_wins[handle].win;
+    curfld = (SFIELD*)((char*)curwin + LE_LONG(curwin->fldofs)) + field_id;
+    style = (SFIELD*)((char*)curwin + LE_LONG(curwin->fldofs)) + style_field_id;
+    below = (SFIELD*)((char*)curwin + LE_LONG(curwin->fldofs)) + below_field_id;
+
+    curfld->opt = FLD_BUTTON;
+    curfld->selectable = 1;
+    curfld->kbflag = usekb_flag ? 1 : 0;
+    curfld->bstatus = NORMAL;
+    curfld->x = style->x;
+    curfld->lx = style->lx;
+    curfld->ly = style->ly;
+    curfld->y = below->y + below->ly + gap;
+    curfld->picflag = style->picflag;
+    curfld->color = style->color;
+    curfld->lite = style->lite;
+    curfld->fontbasecolor = style->fontbasecolor;
+    curfld->fontid = style->fontid;
+    curfld->item = style->item;
+    curfld->shadow = style->shadow;
+    curfld->saveflag = 0;
+    curfld->sptr = NULL;
+    memcpy(curfld->font_name, style->font_name, sizeof(curfld->font_name));
+    memcpy(curfld->item_name, style->item_name, sizeof(curfld->item_name));
 }
 
 /***************************************************************************
@@ -2760,12 +2804,13 @@ SWD_SetFieldSelect(
  ***************************************************************************/
 int                        // RETURN: mark status ( TRUE, FALSE )
 SWD_GetFieldMark(
-    int handle,            // INPUT : window handle 
+    int handle,            // INPUT : window handle
     int field_id           // INPUT : field handle
 )
 {
     SWIN *curwin;
     SFIELD *curfld;
+    /* keep following original function body */
     curwin = g_wins[handle].win;
     
     curfld = (SFIELD*)((char*)curwin + LE_LONG(curwin->fldofs)) + field_id;

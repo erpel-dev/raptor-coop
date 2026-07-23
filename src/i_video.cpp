@@ -35,6 +35,7 @@
 #include "m_misc.h"
 #include "ptrapi.h"
 #include "input.h"
+#include "kbdapi.h"
 #include "musapi.h"
 #include "prefapi.h"
 #include "joyapi.h"
@@ -424,6 +425,7 @@ void I_GetEvent(void)
     SDL_Event sdlevent;
 
     SDL_PumpEvents();
+    KBD_PollFromSDL();
 
     while (SDL_PollEvent(&sdlevent))
     {
@@ -439,6 +441,8 @@ void I_GetEvent(void)
 
             case SDL_KEYUP:
 		        I_HandleKeyboardEvent(&sdlevent);
+                /* Re-sync after event so held-key matrix stays authoritative. */
+                KBD_PollFromSDL();
                 break;
             case SDL_CONTROLLERDEVICEADDED:
                 IPT_CalJoy();

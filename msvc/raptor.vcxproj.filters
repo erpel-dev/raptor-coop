@@ -18,6 +18,9 @@
     <ClInclude Include="..\src\anims.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\assets_fetch.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\bonus.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -93,7 +96,13 @@
     <ClInclude Include="..\src\opl3.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\player.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\prefapi.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\miniz\miniz.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="..\src\ptrapi.h">
@@ -141,6 +150,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\anims.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\assets_fetch.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bonus.cpp">
@@ -218,7 +230,13 @@
     <ClCompile Include="..\src\opl3.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\player.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\prefapi.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\miniz\miniz.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="..\src\ptrapi.cpp">

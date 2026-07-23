@@ -1048,7 +1048,8 @@ RAP_WriteDefaultSetup(
     INI_PutPreferenceLong("Setup", "Control", 0);
 #endif //__ANDROID__
     INI_PutPreferenceLong("Setup", "Haptic", 1);                           
-    INI_PutPreferenceLong("Setup", "joy_ipt_MenuNew", 0);         
+    INI_PutPreferenceLong("Setup", "joy_ipt_MenuNew", 0);
+    INI_PutPreferenceLong("Setup", "Coop", 0);         
 
 #if _WIN32 || __APPLE__
     INI_PutPreferenceLong("Setup", "sys_midi", 1);

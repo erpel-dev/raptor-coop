@@ -8,6 +8,7 @@
 #include "tile.h"
 #include "fileids.h"
 #include "entypes.h"
+#include "player.h"
 
 #define MAX_ANIMLIB 25
 #define MAX_ANIMS   100
@@ -241,6 +242,20 @@ ANIMS_StartAnim(
     int y                  // INPUT : y position
 )
 {
+    ANIMS_StartPlayerAnim(handle, x, y, -1);
+}
+
+/***************************************************************************
+ANIMS_StartPlayerAnim () - Start An ANIM locked to a co-op player
+ ***************************************************************************/
+void
+ANIMS_StartPlayerAnim(
+    int handle,
+    int x,
+    int y,
+    int pidx
+)
+{
     ANIMLIB *lib;
     ANIMS *cur;
     lib = &animlib[handle];
@@ -253,6 +268,7 @@ ANIMS_StartAnim(
     cur->x = x - lib->xoff;
     cur->y = y - lib->yoff;
     cur->groundflag = lib->groundflag;
+    cur->player = pidx;
 }
 
 /***************************************************************************
@@ -352,8 +368,11 @@ ANIMS_Think(
         
         if (lib->playerflag)
         {
-            cur->dx = player_cx + cur->x;
-            cur->dy = player_cy + cur->y;
+            int ti = cur->player;
+            if (ti < 0 || ti >= num_players || !players[ti].alive || players[ti].energy <= 0)
+                ti = RAP_FirstLivingPlayer();
+            cur->dx = players[ti].cx + cur->x;
+            cur->dy = players[ti].cy + cur->y;
         }
         else if (cur->en)
         {

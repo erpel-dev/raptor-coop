@@ -158,21 +158,27 @@ I_HandleKeyboardEvent(
     switch (sdlevent->key.keysym.scancode)
     {
     case SDL_SCANCODE_LCTRL:
+        key = SC_CTRL;
+        break;
+
     case SDL_SCANCODE_RCTRL:
-        key = 0x1d;
+        key = SC_RIGHT_CTRL;
         break;
     
     case SDL_SCANCODE_LSHIFT:
-        key = 0x2a;
+        key = SC_LEFT_SHIFT;
         break;
     
     case SDL_SCANCODE_RSHIFT:
-        key = 0x36;
+        key = SC_RIGHT_SHIFT;
         break;
     
     case SDL_SCANCODE_LALT:
+        key = SC_ALT;
+        break;
+
     case SDL_SCANCODE_RALT:
-        key = 0x38;
+        key = SC_RIGHT_ALT;
         break;
 
 #ifdef __ANDROID__
@@ -221,6 +227,46 @@ KBD_Clear(
 {
     lastscan = SC_NONE;
     memset(keyboard, 0, sizeof(keyboard));
+}
+
+/***************************************************************************
+   KBD_PollFromSDL() - Rebuild held-key state from SDL (helps multi-key play)
+ ***************************************************************************/
+void
+KBD_PollFromSDL(
+    void
+)
+{
+    const Uint8 *st;
+    int i, mapped;
+
+    st = SDL_GetKeyboardState(NULL);
+    if (!st)
+        return;
+
+    memset(keyboard, 0, sizeof(keyboard));
+
+    if (st[SDL_SCANCODE_LCTRL])
+        keyboard[SC_CTRL] = 1;
+    if (st[SDL_SCANCODE_RCTRL])
+        keyboard[SC_RIGHT_CTRL] = 1;
+    if (st[SDL_SCANCODE_LSHIFT])
+        keyboard[SC_LEFT_SHIFT] = 1;
+    if (st[SDL_SCANCODE_RSHIFT])
+        keyboard[SC_RIGHT_SHIFT] = 1;
+    if (st[SDL_SCANCODE_LALT])
+        keyboard[SC_ALT] = 1;
+    if (st[SDL_SCANCODE_RALT])
+        keyboard[SC_RIGHT_ALT] = 1;
+
+    for (i = 0; i < 100; i++)
+    {
+        if (!st[i])
+            continue;
+        mapped = ScanCodeMap[i];
+        if (mapped > 0 && mapped < 256)
+            keyboard[mapped] = 1;
+    }
 }
 
 /***************************************************************************

@@ -14,6 +14,7 @@
 #include "gssapi.h"
 #include "fileids.h"
 #include "entypes.h"
+#include "player.h"
 
 int music_volume;
 int dig_flag;
@@ -906,8 +907,9 @@ SND_3DPatch(
     
     if (numsnds <= fx_channels + 2)
     {
-        dx = x - player_cx;
-        dy = y - player_cy;
+        int ti = RAP_NearestPlayerTo(x, y);
+        dx = x - players[ti].cx;
+        dy = y - players[ti].cy;
         
         xpos = dx + 127;
         

@@ -33,6 +33,9 @@
 #include "i_lastscr.h"
 #include "fileids.h"
 #include "entypes.h"
+#include "assets_fetch.h"
+#include "player.h"
+#include "shots.h"
 
 #ifdef _WIN32
 #include <io.h>
@@ -511,61 +514,111 @@ RAP_DisplayStats(
     static int damage = -1;
     static int blinkflag = 1;
 
-    // == DISPLAY SUPER SHIELD ========================
+    // == DISPLAY SUPER SHIELD / P2 ENERGY ========================
     super = OBJS_GetAmt(S_SUPER_SHIELD);
-    if (g_oldsuper != super)
+    if (num_players > 1)
     {
-        RAP_DisplayShieldLevel(MAP_LEFT - 8, super);
+        int e0 = OBJS_GetEnergyPlr(0);
+        int e1 = players[1].alive ? OBJS_GetEnergyPlr(1) : 0;
+        /* Right = P1 energy, Left = P2 energy (super shared overlay when present). */
+        RAP_DisplayShieldLevel(MAP_RIGHT + 4, e0);
+        if (super > 0)
+            RAP_DisplayShieldLevel(MAP_LEFT - 8, super);
+        else
+            RAP_DisplayShieldLevel(MAP_LEFT - 8, e1);
         g_oldsuper = super;
+        g_oldshield = e0 + (e1 << 8);
+        shield = (e0 < e1) ? e0 : e1;
     }
-    
-    // == DISPLAY NORM SHIELD ========================
-    shield = OBJS_GetAmt(S_ENERGY);
-    if (g_oldshield != shield)
+    else
     {
-        RAP_DisplayShieldLevel(MAP_RIGHT + 4, shield);
+        if (g_oldsuper != super)
+        {
+            RAP_DisplayShieldLevel(MAP_LEFT - 8, super);
+            g_oldsuper = super;
+        }
+        shield = OBJS_GetEnergyPlr(0);
+        if (g_oldshield != shield)
+        {
+            RAP_DisplayShieldLevel(MAP_RIGHT + 4, shield);
+            g_oldshield = shield;
+        }
     }
 
-    if (shield <= 0 && !godmode)
+    /* Per-player death / explosion when energy depleted. */
     {
-        // BLOW UP SHIP IF ! IN GOD MODE ===================
-        
-        ANIMS_StartAnim(A_MED_AIR_EXPLO, playerx + (wrand()%32), playery + (wrand()%32));
-        ANIMS_StartAnim(A_SMALL_AIR_EXPLO, playerx + (wrand()%32), playery + (wrand()%32));
-        
-        if (startendwave > END_EXPLODE)
+        int pi;
+        for (pi = 0; pi < num_players; pi++)
         {
-            if ((wrand()%2) == 0)
-                SND_Patch(FX_AIREXPLO, 30);
-            else
-                SND_Patch(FX_AIREXPLO, 225);
+            Player *pl = &players[pi];
+            if (!pl->alive)
+                continue;
+            if (pl->energy > 0 || godmode)
+                continue;
+
+            ANIMS_StartAnim(A_MED_AIR_EXPLO, pl->x + (wrand()%32), pl->y + (wrand()%32));
+            ANIMS_StartAnim(A_SMALL_AIR_EXPLO, pl->x + (wrand()%32), pl->y + (wrand()%32));
+
+            if (!pl->draw)
+                continue;
+
+            pl->draw = 0;
+            pl->alive = 0;
+            SND_Patch(FX_AIREXPLO, 127);
+            SND_Patch(FX_AIREXPLO2, 127);
+            ANIMS_StartAnim(A_LARGE_AIR_EXPLO, pl->cx, pl->cy);
+        }
+    }
+
+    if (RAP_LivingPlayerCount() <= 0 && !godmode)
+    {
+        if (startendwave == -1)
+            startendwave = END_DURATION;
+
+        if (startendwave == END_EXPLODE)
+        {
+            draw_player = 0;
+            SND_Patch(FX_AIREXPLO, 127);
+            SND_Patch(FX_AIREXPLO2, 127);
+        }
+    }
+
+    // IF END OF WAVE FLY SHIP OFF SCREEN ===================
+
+    if (startendwave != -1 && RAP_LivingPlayerCount() > 0)
+    {
+        int ti = RAP_FirstLivingPlayer();
+        RAP_SyncPlayerGlobalsFrom(ti);
+        shield = players[ti].energy;
+
+        if (startendwave == END_FLYOFF)
+        {
+            IPT_PauseControl(1);
+            SND_Patch(FX_FLYBY, 127);
         }
         
+        if (startendwave < END_FLYOFF)
+        {
+            IPT_FMovePlayer(0, -4);
+            RAP_StorePlayerGlobalsTo(ti);
+        }
+    }
+
+#if 0
+    /* legacy single-player death block kept for reference */
+    shield = OBJS_GetAmt(S_ENERGY);
+    if (shield <= 0 && !godmode)
+    {
+        ANIMS_StartAnim(A_MED_AIR_EXPLO, playerx + (wrand()%32), playery + (wrand()%32));
         if (startendwave == -1)
             startendwave = END_DURATION;
         
         if (startendwave == END_EXPLODE)
         {
             draw_player = 0;
-            SND_Patch(FX_AIREXPLO, 127);
-            SND_Patch(FX_AIREXPLO2, 127);
             ANIMS_StartAnim(A_LARGE_AIR_EXPLO, player_cx, player_cy);
-            
-            for (loop = 0; loop < (PLAYERWIDTH * PLAYERHEIGHT) / 2; loop++)
-            {
-                x = playerx - (PLAYERWIDTH / 2) + (wrand() % 32) * 2;
-                y = playery - (PLAYERWIDTH / 2) + (wrand() % 32) * 2;
-                
-                if (loop & 1)
-                    ANIMS_StartAnim(A_LARGE_AIR_EXPLO, x, y);
-                else
-                    ANIMS_StartAAnim(A_MED_AIR_EXPLO2, x, y);
-            }
-            SND_Patch(FX_AIREXPLO2, 127);
         }
     }
-
-    // IF END OF WAVE FLY SHIP OFF SCREEN ===================
 
     if (startendwave != -1 && shield > 0)
     {
@@ -587,8 +640,30 @@ RAP_DisplayStats(
             IPT_FMovePlayer(x, -4);
         }
     }
+#endif
+
+    /* Lateral nudge during fly-off for the living player. */
+    if (startendwave != -1 && RAP_LivingPlayerCount() > 0 && startendwave < END_FLYOFF)
+    {
+        int ti = RAP_FirstLivingPlayer();
+        RAP_SyncPlayerGlobalsFrom(ti);
+        x = 0;
+        if (playerx < 152)
+            x = 8;
+        else if (playerx > 168)
+            x = -8;
+        if (x)
+        {
+            IPT_FMovePlayer(x, 0);
+            RAP_StorePlayerGlobalsTo(ti);
+        }
+    }
     
-    if (shield <= SHIELD_LOW && !godmode)
+    shield = (num_players > 1)
+        ? ((OBJS_GetEnergyPlr(0) < OBJS_GetEnergyPlr(1)) ? OBJS_GetEnergyPlr(0) : OBJS_GetEnergyPlr(1))
+        : OBJS_GetEnergyPlr(0);
+
+    if (shield <= SHIELD_LOW && RAP_LivingPlayerCount() > 0 && !godmode)
     {
         if (!(gl_cnt % 8))
         {
@@ -608,7 +683,7 @@ RAP_DisplayStats(
             }
         }
         
-        if (shield < g_oldshield && super < 1)
+        if (shield < (g_oldshield & 0xff) && super < 1)
         {
             if (OBJS_LoseObj())
             {
@@ -635,7 +710,8 @@ RAP_DisplayStats(
         }
     }
     
-    g_oldshield = shield;
+    if (num_players <= 1)
+        g_oldshield = shield;
     
     OBJS_DisplayStats();
     
@@ -810,6 +886,7 @@ Do_Game(
 )
 {
     int b2_flag, b3_flag, init_flag, rval, start_score, local_cnt;
+    int pi;
     b2_flag = 0;
     b3_flag = 0;
     init_flag = 1;
@@ -830,17 +907,22 @@ Do_Game(
     BUT_2 = 0;
     BUT_3 = 0;
     BUT_4 = 0;
-    
-    playerx = PLAYERINITX;
-    playery = PLAYERINITY;
+
+    RAP_GetShipPic();
+
+    {
+        int np = 1;
+        if (coop_enabled && demo_mode != DEMO_PLAYBACK && demo_flag != DEMO_RECORD)
+            np = 2;
+        RAP_InitPlayers(np);
+    }
     
     if (!demo_mode) 
     {
-        PTR_SetPos(playerx, playery);
+        PTR_SetPos(players[0].x, players[0].y);
         IPT_Start();
     }
     
-    RAP_GetShipPic();
     BONUS_Clear();
     ANIMS_Clear();
     SHOTS_Clear();
@@ -860,7 +942,15 @@ Do_Game(
     startendwave = -1;
     
     if (demo_flag == DEMO_RECORD)
-        DEMO_StartRec();
+    {
+        if (num_players > 1 || coop_enabled)
+        {
+            printf("DEMO RECORD disabled in co-op mode\n");
+            demo_flag = 0;
+        }
+        else
+            DEMO_StartRec();
+    }
 
     // == CLEAR ALL BUTTONS ===========================
 
@@ -874,11 +964,16 @@ Do_Game(
         
         #ifdef __ANDROID__
         if (!I_GetNeedResize(true))
-            IPT_MovePlayer();
+        {
+            for (pi = 0; pi < num_players; pi++)
+                IPT_MovePlayerPlr(pi);
+        }
         #else
-        IPT_MovePlayer();
+        for (pi = 0; pi < num_players; pi++)
+            IPT_MovePlayerPlr(pi);
         #endif //__ANDROID__
         
+        RAP_SyncPlayerGlobalsFrom(RAP_FirstLivingPlayer());
         if (KBD_IsKey(SC_F1))                                                                   
         {
             SWD_SetClearFlag(0);
@@ -995,46 +1090,57 @@ Do_Game(
             break;
         }
         
-        if (BUT_1)
+        for (pi = 0; pi < num_players; pi++)
         {
-            OBJS_Use(S_FORWARD_GUNS);
-            OBJS_Use(S_PLASMA_GUNS);
-            OBJS_Use(S_MICRO_MISSLE);
-            BUT_1 = 0;
-            if (plr.sweapon != -1)
-                OBJS_Use(plr.sweapon);
-        }
-        
-        if (BUT_2)
-        {
-            BUT_2 = 0;
-            if (!b2_flag)
+            Player *pl = &players[pi];
+            if (!pl->alive || pl->energy <= 0 || !pl->draw)
+                continue;
+
+            RAP_SyncPlayerGlobalsFrom(pi);
+            g_shot_owner = pi;
+            g_flash = 0;
+
+            if (pl->buttons[0])
             {
-                SND_Patch(FX_SWEP, 127);
-                b2_flag = 1;
-                OBJS_GetNext();
+                OBJS_Use(S_FORWARD_GUNS);
+                OBJS_Use(S_PLASMA_GUNS);
+                OBJS_Use(S_MICRO_MISSLE);
+                pl->buttons[0] = 0;
+                if (plr.sweapon != -1)
+                    OBJS_Use(plr.sweapon);
             }
-        }
-        else
-        {
-            if (b2_flag == 1)
-                b2_flag = 0;
-        }
-        
-        if (BUT_3)
-        {
-            BUT_3 = 0;
-            if (!b3_flag)
+
+            if (pl->buttons[1])
             {
-                b3_flag = 1;
-                OBJS_Use(S_MEGA_BOMB);
+                pl->buttons[1] = 0;
+                if (!pl->b2_flag)
+                {
+                    SND_Patch(FX_SWEP, 127);
+                    pl->b2_flag = 1;
+                    if (pi == 0)
+                        OBJS_GetNext();
+                }
             }
+            else if (pl->b2_flag == 1)
+                pl->b2_flag = 0;
+
+            if (pl->buttons[2])
+            {
+                pl->buttons[2] = 0;
+                if (!pl->b3_flag)
+                {
+                    pl->b3_flag = 1;
+                    OBJS_Use(S_MEGA_BOMB);
+                }
+            }
+            else if (pl->b3_flag == 1)
+                pl->b3_flag = 0;
+
+            pl->flash = g_flash;
+            RAP_StorePlayerGlobalsTo(pi);
         }
-        else
-        {
-            if (b3_flag == 1)
-                b3_flag = 0;
-        }
+        g_shot_owner = RAP_FirstLivingPlayer();
+        RAP_SyncPlayerGlobalsFrom(g_shot_owner);
         
         if (startendwave != -1)
         {
@@ -1054,8 +1160,12 @@ Do_Game(
         ANIMS_Think();
         OBJS_Think();
         
-        if (draw_player)
-            SHADOW_Add(curship[playerpic + g_flash], playerx, playery);
+        for (pi = 0; pi < num_players; pi++)
+        {
+            Player *pl = &players[pi];
+            if (pl->draw && pl->alive && pl->energy > 0)
+                SHADOW_Add(curship[pl->pic + pl->flash], pl->x, pl->y);
+        }
         
         TILE_Display();
         SHADOW_DisplayGround();
@@ -1068,12 +1178,15 @@ Do_Game(
         BONUS_Display();
         ANIMS_DisplaySky();
         
-        if (draw_player)
+        for (pi = 0; pi < num_players; pi++)
         {
-            FLAME_Down(player_cx - o_engine[playerpic] - 3, player_cy + 15, 4, gl_cnt % 2);
-            FLAME_Down(player_cx + o_engine[playerpic] - 2, player_cy + 15, 4, gl_cnt % 2);
-            GFX_PutSprite((char*)GLB_GetItem(curship[playerpic + g_flash]), playerx, playery);
-            g_flash = 0;
+            Player *pl = &players[pi];
+            if (!(pl->draw && pl->alive && pl->energy > 0))
+                continue;
+            FLAME_Down(pl->cx - o_engine[pl->pic] - 3, pl->cy + 15, 4, gl_cnt % 2);
+            FLAME_Down(pl->cx + o_engine[pl->pic] - 2, pl->cy + 15, 4, gl_cnt % 2);
+            GFX_PutSprite((char*)GLB_GetItem(curship[pl->pic + pl->flash]), pl->x, pl->y);
+            pl->flash = 0;
         }
         
         ANIMS_DisplayHigh();
@@ -1220,6 +1333,9 @@ Do_Game(
     } while (!end_wave);
     
     GFX_FadeOut(0, 0, 0, 32);
+
+    /* Carry surviving shield energy back into shared inventory for store. */
+    OBJS_SyncEnergyFromPlayers();
     
     RAP_FreeMap();
     end_wave = 0;
@@ -1266,7 +1382,7 @@ main(
 )
 {
     char *var1, *tptr, *pal;
-    int loop, numfiles, ptrflag, item;
+    int loop, ptrflag, item;
 
     var1 = getenv("S_HOST");
 
@@ -1303,7 +1419,7 @@ main(
         {
             DEMO_SetFileName(argv[2]);
             demo_flag = DEMO_RECORD;
-            printf("DEMO RECORD enabled\n");
+            printf("DEMO RECORD requested (disabled if co-op is on)\n");
         }
         else if (!strcmp(argv[1], "PLAY"))
         {
@@ -1321,50 +1437,16 @@ main(
     
     cur_diff = 0;
 
-    if (!access("FILE0001.GLB", 0) ||
-        !access("file0001.glb", 0) ||
-        RAP_CheckFileInPath("FILE0001.GLB") ||
-        RAP_CheckFileInPath("file0001.glb"))
-        gameflag[0] = 1;
-
-    if (!access("FILE0002.GLB", 0) ||
-        !access("file0002.glb", 0) ||
-        RAP_CheckFileInPath("FILE0002.GLB") ||
-        RAP_CheckFileInPath("file0002.glb"))
-        gameflag[1] = 1;
-
-    if ((!access("FILE0003.GLB", 0) && !access("FILE0004.GLB", 0)) || 
-        (!access("file0003.glb", 0) && !access("file0004.glb", 0)) ||
-        (!access("FILE0003.GLB", 0) && !access("file0004.glb", 0)) ||
-        (!access("file0003.glb", 0) && !access("FILE0004.GLB", 0)) ||
-        (RAP_CheckFileInPath("FILE0003.GLB") && RAP_CheckFileInPath("FILE0004.GLB")) ||
-        (RAP_CheckFileInPath("file0003.glb") && RAP_CheckFileInPath("file0004.glb")) ||
-        (RAP_CheckFileInPath("FILE0003.GLB") && RAP_CheckFileInPath("file0004.glb")) ||
-        (RAP_CheckFileInPath("file0003.glb") && RAP_CheckFileInPath("FILE0004.GLB")))
+    if (!RAP_HasGameData())
     {
-        gameflag[2] = 1;
-        gameflag[3] = 1;
-    }
-
-    if (gameflag[1] + gameflag[2])
-        reg_flag = 1;
-
-    numfiles = 0;
-    
-    for (loop = 0; loop < 4; loop++)
-    {
-        if (gameflag[loop])
-            numfiles++;
-    }
-
-    if ((access("FILE0000.GLB", 0) && !RAP_CheckFileInPath("FILE0000.GLB")) &&
-        (access("file0000.glb", 0) && !RAP_CheckFileInPath("file0000.glb")) ||
-        !numfiles)
-    {
-        printf("All game data files NOT FOUND cannot proceed !!\n");
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-            "Raptor", "All game data files NOT FOUND cannot proceed !!", NULL);
-        exit(0);
+        printf("All game data files NOT FOUND — offering shareware download...\n");
+        if (!RAP_OfferAssetDownload() || !RAP_HasGameData())
+        {
+            printf("All game data files NOT FOUND cannot proceed !!\n");
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+                "Raptor", "All game data files NOT FOUND cannot proceed !!", NULL);
+            exit(0);
+        }
     }
     
     printf("Init -\n");

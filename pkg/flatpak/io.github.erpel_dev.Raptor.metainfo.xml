@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.erpel_dev.Raptor</id>
+  <name>Raptor</name>
+  <summary>Source port of Raptor: Call Of The Shadows</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0-or-later</project_license>
+  <developer id="io.github.erpel_dev">
+    <name>erpel-dev</name>
+  </developer>
+  <url type="homepage">https://github.com/erpel-dev/raptor-coop</url>
+  <url type="bugtracker">https://github.com/erpel-dev/raptor-coop/issues</url>
+  <description>
+    <p>
+      Raptor is a reversed-engineered SDL2 source port of the classic 1994
+      vertical shooter Raptor: Call Of The Shadows. This fork adds local
+      same-screen co-op and is based on the skynettx SDL2 port.
+    </p>
+    <p>
+      Original game assets are not bundled for licensing reasons. On first
+      launch without data, you can download the shareware GLB files from
+      DOS Games Archive (with confirmation), open the download page in a
+      browser, or install FILE0000.GLB and FILE0001.GLB yourself into:
+      ~/.var/app/io.github.erpel_dev.Raptor/data/Raptor/
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.erpel_dev.Raptor.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Raptor title artwork</caption>
+      <image>https://raw.githubusercontent.com/erpel-dev/raptor-coop/master/rsrc/raptorback.png</image>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="0.8.1" date="2025-10-08"/>
+  </releases>
+  <categories>
+    <category>Game</category>
+    <category>ActionGame</category>
+  </categories>
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-fantasy">moderate</content_attribute>
+    <content_attribute id="violence-bloodshed">mild</content_attribute>
+  </content_rating>
+</component>
