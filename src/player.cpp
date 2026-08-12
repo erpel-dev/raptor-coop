@@ -7,6 +7,29 @@ Player players[MAX_PLAYERS];
 int num_players = 1;
 int coop_enabled = 0;
 
+/* Player 2: VGA red ramp 32-47 → yellow ramp 48-63. */
+static char p2_ship_remap[256];
+static int p2_ship_remap_ready;
+
+static void
+RAP_InitShipRemap(
+    void
+)
+{
+    int i;
+
+    if (p2_ship_remap_ready)
+        return;
+
+    for (i = 0; i < 256; i++)
+        p2_ship_remap[i] = (char)i;
+
+    for (i = 0; i < 16; i++)
+        p2_ship_remap[32 + i] = (char)(48 + i);
+
+    p2_ship_remap_ready = 1;
+}
+
 void
 RAP_InitPlayers(
     int count
@@ -52,6 +75,7 @@ RAP_InitPlayers(
         players[i].cy = players[i].y + (PLAYERHEIGHT / 2);
     }
 
+    RAP_InitShipRemap();
     RAP_SyncPlayerGlobalsFrom(0);
 }
 
@@ -155,4 +179,16 @@ RAP_PlayerAt(
     if (idx < 0 || idx >= MAX_PLAYERS)
         return &players[0];
     return &players[idx];
+}
+
+char *
+RAP_ShipColorRemap(
+    int idx
+)
+{
+    if (idx != 1)
+        return NULL;
+
+    RAP_InitShipRemap();
+    return p2_ship_remap;
 }

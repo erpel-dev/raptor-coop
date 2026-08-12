@@ -509,10 +509,14 @@ RAP_DisplayStats(
 {
     char temp[24];
     int super, shield, loop, x, y;
+    int prev_shield;
+    int all_living_low;
     char* pic;
     GFX_PIC *h;
     static int damage = -1;
     static int blinkflag = 1;
+
+    prev_shield = g_oldshield;
 
     // == DISPLAY SUPER SHIELD / P2 ENERGY ========================
     super = OBJS_GetAmt(S_SUPER_SHIELD);
@@ -527,7 +531,6 @@ RAP_DisplayStats(
         else
             RAP_DisplayShieldLevel(MAP_LEFT - 8, e1);
         g_oldsuper = super;
-        g_oldshield = e0 + (e1 << 8);
         shield = (e0 < e1) ? e0 : e1;
     }
     else
@@ -663,6 +666,15 @@ RAP_DisplayStats(
         ? ((OBJS_GetEnergyPlr(0) < OBJS_GetEnergyPlr(1)) ? OBJS_GetEnergyPlr(0) : OBJS_GetEnergyPlr(1))
         : OBJS_GetEnergyPlr(0);
 
+    all_living_low = 1;
+    for (loop = 0; loop < num_players; loop++)
+    {
+        if (!players[loop].alive || players[loop].energy <= 0)
+            continue;
+        if (players[loop].energy > SHIELD_LOW)
+            all_living_low = 0;
+    }
+
     if (shield <= SHIELD_LOW && RAP_LivingPlayerCount() > 0 && !godmode)
     {
         if (!(gl_cnt % 8))
@@ -683,7 +695,9 @@ RAP_DisplayStats(
             }
         }
         
-        if (shield < (g_oldshield & 0xff) && super < 1)
+        /* Co-op: strip weapons only when every living player is in the
+         * low-shield range and energy actually dropped this frame. */
+        if (all_living_low && shield < (prev_shield & 0xff) && super < 1)
         {
             if (OBJS_LoseObj())
             {
@@ -710,8 +724,7 @@ RAP_DisplayStats(
         }
     }
     
-    if (num_players <= 1)
-        g_oldshield = shield;
+    g_oldshield = shield;
     
     OBJS_DisplayStats();
     
@@ -1185,7 +1198,14 @@ Do_Game(
                 continue;
             FLAME_Down(pl->cx - o_engine[pl->pic] - 3, pl->cy + 15, 4, gl_cnt % 2);
             FLAME_Down(pl->cx + o_engine[pl->pic] - 2, pl->cy + 15, 4, gl_cnt % 2);
-            GFX_PutSprite((char*)GLB_GetItem(curship[pl->pic + pl->flash]), pl->x, pl->y);
+            {
+                char *spr = (char*)GLB_GetItem(curship[pl->pic + pl->flash]);
+                char *remap = RAP_ShipColorRemap(pi);
+                if (remap)
+                    GFX_PutSpriteRemap(spr, pl->x, pl->y, remap);
+                else
+                    GFX_PutSprite(spr, pl->x, pl->y);
+            }
             pl->flash = 0;
         }
         

@@ -1471,6 +1471,77 @@ GFX_PutSprite(
 }
 
 /***************************************************************************
+   GFX_PutSpriteRemap () - Puts a Sprite with palette index remapping
+ ***************************************************************************/
+void 
+GFX_PutSpriteRemap(
+    char *inmem,
+    int x,
+    int y,
+    char *table
+)
+{
+    GFX_PIC *h = (GFX_PIC*)inmem;
+    GFX_SPRITE *ah;
+    char rval;
+    char* dest;
+    char *outline;
+    int ox = x;
+    int oy = y;
+    int lx = LE_LONG(h->width);
+    int ly = LE_LONG(h->height);
+    int loop;
+    
+    rval = GFX_ClipLines(NULL, &ox, &oy, &lx, &ly);
+    
+    if (!rval) 
+        return;
+
+    inmem += sizeof(GFX_PIC);
+
+    switch (rval)
+    {
+    default:
+        break;
+
+    case 1:
+        dest = displaybuffer + ox + ylookup[oy];
+        GFX_DrawSpriteRemap(dest, inmem, table);
+        break;
+
+    case 2:
+        ah = (GFX_SPRITE*)inmem;
+
+        while (LE_LONG(ah->offset) != -1)
+        {
+            inmem += sizeof(GFX_SPRITE);
+
+            ox = LE_LONG(ah->x) + x;
+            oy = LE_LONG(ah->y) + y;
+
+            if (oy > SCREENHEIGHT) break;
+
+            lx = LE_LONG(ah->length);
+            ly = 1;
+
+            outline = inmem;
+
+            if (GFX_ClipLines(&outline, &ox, &oy, &lx, &ly))
+            {
+                dest = displaybuffer + ox + ylookup[oy];
+                for (loop = 0; loop < lx; loop++)
+                    dest[loop] = table[(uint8_t)outline[loop]];
+            }
+
+            inmem += LE_LONG(ah->length);
+
+            ah = (GFX_SPRITE*)inmem;
+        }
+        break;
+    }
+}
+
+/***************************************************************************
    GFX_OverlayImage() - places image in displaybuffer and performs cliping
  ***************************************************************************/
 void 

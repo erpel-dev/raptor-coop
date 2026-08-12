@@ -231,9 +231,11 @@ WIN_Opts(
     SWD_SetFieldText(opt_window, OPTS_DETAIL, detail[curd]);
     SWD_SetWinDrawFunc(opt_window, WIN_OptDraw);
 
-    /* Music/sfx labels are baked into the options texture; reuse the unused
-       overlay text field as a co-op toggle in the empty gap above EXIT. */
-    SWD_RepurposeAsButton(opt_window, OPTS_COOP, OPTS_DETAIL, OPTS_VFX, 3);
+    /* Music label is baked into the texture; the unused SFX-label overlay
+       sits in the gap between the two sliders — same column as HIGH DETAIL,
+       clear of EXIT. Put the FX pointer on the FX slider row. */
+    SWD_RepurposeAsButton(opt_window, OPTS_COOP, OPTS_DETAIL, OPTS_VMUSIC, 7);
+    SWD_CopyFieldY(opt_window, OPTS_PIC3, OPTS_VFX);
     SWD_SetFieldText(opt_window, OPTS_COOP, coop_lbl[curc]);
     
     SWD_SetFieldItem(opt_window, OPTS_PIC1, -1);

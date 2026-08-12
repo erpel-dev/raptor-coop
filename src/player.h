@@ -32,3 +32,4 @@ int RAP_LivingPlayerCount(void);
 int RAP_NearestPlayerTo(int x, int y);
 int RAP_FirstLivingPlayer(void);
 Player *RAP_PlayerAt(int idx);
+char *RAP_ShipColorRemap(int idx);

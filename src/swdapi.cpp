@@ -2800,6 +2800,26 @@ SWD_RepurposeAsButton(
 }
 
 /***************************************************************************
+SWD_CopyFieldY() - Match a field's Y to another field (window-relative)
+ ***************************************************************************/
+void
+SWD_CopyFieldY(
+    int handle,
+    int field_id,
+    int src_field_id
+)
+{
+    SWIN *curwin;
+    SFIELD *curfld;
+    SFIELD *src;
+
+    curwin = g_wins[handle].win;
+    curfld = (SFIELD*)((char*)curwin + LE_LONG(curwin->fldofs)) + field_id;
+    src = (SFIELD*)((char*)curwin + LE_LONG(curwin->fldofs)) + src_field_id;
+    curfld->y = src->y;
+}
+
+/***************************************************************************
  SWD_GetFieldMark() - Gets the field mark status ( TRUE or FALSE )
  ***************************************************************************/
 int                        // RETURN: mark status ( TRUE, FALSE )

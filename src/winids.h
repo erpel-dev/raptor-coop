@@ -191,7 +191,7 @@
 #define OPTS_EXIT 0x0007     // BUTTON FIELD
 #define OPTS_0008 0x0008     // TEXT FIELD
 #define OPTS_0009 0x0009     // TEXT FIELD
-#define OPTS_000A 0x000a     // TEXT FIELD (repurposed as CO-OP button at runtime)
-#define OPTS_COOP  OPTS_000A // Local co-op toggle
+#define OPTS_000A 0x000a     // TEXT FIELD (SFX label overlay → CO-OP button)
+#define OPTS_COOP  OPTS_000A // Local co-op toggle (between volume sliders)
 #define OPTS_VMUSIC 0x000b   // VIEW AREA
 #define OPTS_VFX 0x000c      // VIEW AREA

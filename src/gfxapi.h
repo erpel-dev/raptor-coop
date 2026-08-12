@@ -105,12 +105,14 @@ void GFX_ScalePic(char *buffin, int x, int y, int new_lx, int new_ly, int see_th
 void GFX_DisplayUpdate(void);
 void GFX_PutImage(char *image, int x, int y, int see_thru);
 void GFX_PutSprite(char *inmem, int x, int y);
+void GFX_PutSpriteRemap(char *inmem, int x, int y, char *table);
 void GFX_MarkUpdate(int x, int y, int lx, int ly);
 void GFX_ForceUpdate(int x, int y, int lx, int ly);
 void GFX_SetFrameHook(void (*func)(void (*)(void)));
 void GFX_WaitUpdate(int count);
 void GFX_DisplayScreen(void);
 void GFX_DrawSprite(char *dest, char *inmem);
+void GFX_DrawSpriteRemap(char *dest, char *inmem, char *table);
 void GFX_DrawChar(char *dest, char *inmem, int width, int height, int addx, int color);
 void GFX_Shade(char *outmem, int maxlen, char *dtable);
 void GFX_PutPic(void);

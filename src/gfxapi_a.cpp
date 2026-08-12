@@ -123,6 +123,34 @@ GFX_DrawSprite(
 }
 
 /*==========================================================================
+   GFX_DrawSpriteRemap() - Draw sprite through a 256-entry color table
+ ==========================================================================*/
+void 
+GFX_DrawSpriteRemap(
+    char *dest, 
+    char *inmem,
+    char *table
+)
+{
+    GFX_PIC* h = (GFX_PIC*)inmem;
+    GFX_SPRITE* ah = (GFX_SPRITE*)inmem;
+    
+    while ((int16_t)LE_LONG(ah->offset) != -1)
+    {
+        char *d = dest + (uint16_t)LE_LONG(ah->offset);
+        char *s = (char*)&h->height;
+        int loop;
+        int width = (uint16_t)LE_LONG(h->width);
+
+        for (loop = 0; loop < width; loop++)
+            d[loop] = table[(uint8_t)s[loop]];
+
+        h = (GFX_PIC*)((char*)&h->height + width);
+        ah = (GFX_SPRITE*)h;
+    }
+}
+
+/*==========================================================================
    GFX_DrawChar() -
  ==========================================================================*/
 void 
