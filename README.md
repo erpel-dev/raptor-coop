@@ -1,10 +1,12 @@
 # Raptor
 Based on the reverse-engineered codebase from Raptor Call Of The Shadows by nukeykt
+Added local coop option, can be toggled in GAME OPTIONS
 
 ## Media
-Click on the thumbnail to watch some videos showing the project in action  
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Nt2HfchiudY/0.jpg)](https://www.youtube.com/channel/UCedmTTlonJK5DvkiMpA_teQ)
+<img width="780" height="589" alt="image" src="https://github.com/user-attachments/assets/333f3aed-bb3d-4f53-a603-3a0540295592" />
+
+
 ## Information
 Original Raptor Call Of The Shadows author Scott Host is working on a new modernized version of the classic called Raptor Remixed. If you are a Raptor fan it would be cool if you would support the project on Kickstarter. For more information visit [www.mking.com](https://www.mking.com)
 
