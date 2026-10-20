@@ -99,68 +99,34 @@ IPT_GetJoyStick(
     void
 )
 {
+    int getstickx, getsticky;
+
     //Get Button
-    
-    if (AButton)
-    {
-        if (AButtonconvert == j_lookup[0])                        //Fire
-            buttons[0] = 1;
-        if (AButtonconvert == j_lookup[1])                        //Fire Special
-            buttons[1] = 1;
-        if (AButtonconvert == j_lookup[2])                        //Change Special
-            buttons[2] = 1;
-        if (AButtonconvert == j_lookup[3])                        //Mega
-            buttons[3] = 1;
-    }
-    
-    if (BButton)
-    {
-        if (BButtonconvert == j_lookup[0])                        //Fire
-            buttons[0] = 1;
-        if (BButtonconvert == j_lookup[1])                        //Fire Special
-            buttons[1] = 1;
-        if (BButtonconvert == j_lookup[2])                        //Change Special
-            buttons[2] = 1;
-        if (BButtonconvert == j_lookup[3])                        //Mega
-            buttons[3] = 1;
-    }
-    
-    if (XButton)
-    {
-        if (XButtonconvert == j_lookup[0])                        //Fire
-            buttons[0] = 1;
-        if (XButtonconvert == j_lookup[1])                        //Fire Special
-            buttons[1] = 1;
-        if (XButtonconvert == j_lookup[2])                        //Change Special
-            buttons[2] = 1;
-        if (XButtonconvert == j_lookup[3])                        //Mega
-            buttons[3] = 1;
-    }
-    
-    if (YButton)
-    {
-        if (YButtonconvert == j_lookup[0])                        //Fire
-            buttons[0] = 1;
-        if (YButtonconvert == j_lookup[1])                        //Fire Special
-            buttons[1] = 1;
-        if (YButtonconvert == j_lookup[2])                        //Change Special
-            buttons[2] = 1;
-        if (YButtonconvert == j_lookup[3])                        //Mega
-            buttons[3] = 1;
-    }
-    
-    if (TriggerRight > 0)                                         //Fire
+
+    if (JOY_GetMappedButton(FIRE))
         buttons[0] = 1;
-    if (TriggerLeft > 0)                                          //Fire Special
+
+    if (JOY_GetMappedButton(CHWEAPON))
         buttons[1] = 1;
-    if (LeftShoulder)                                             //Change Special
+
+    if (JOY_GetMappedButton(MEGABOMB))
         buttons[2] = 1;
-    if (RightShoulder)                                            //Mega
+
+    if (JOY_GetMappedButton(MEGAFIRE))
+        buttons[3] = 1;
+    
+    if (JOY_GetAxis(JOYTRIGGERRIGHT) > 0)                         //Fire
+        buttons[0] = 1;
+    if (JOY_GetAxis(JOYTRIGGERLEFT) > 0)                          //Fire Special
+        buttons[1] = 1;
+    if (JOY_GetButton(JOYLEFTSHOULDER))                           //Change Special
+        buttons[2] = 1;
+    if (JOY_GetButton(JOYRIGHTSHOULDER))                          //Mega
         buttons[3] = 1;
        
     //Move Player DPad
            
-    if (Left)
+    if (JOY_GetButton(JOYLEFT))
     {
         if (g_addx >= 0)
             g_addx = -1;
@@ -168,7 +134,7 @@ IPT_GetJoyStick(
         if (-g_addx > MAX_ADDX)
             g_addx = -MAX_ADDX;
     }
-    else if (Right)
+    else if (JOY_GetButton(JOYRIGHT))
     {
              if (g_addx <= 0)
                  g_addx = 1;
@@ -182,7 +148,7 @@ IPT_GetJoyStick(
             g_addx /= 2;
     }
     
-    if (Up)
+    if (JOY_GetButton(JOYUP))
     {
         if (g_addy >= 0)
             g_addy = -1;
@@ -190,7 +156,7 @@ IPT_GetJoyStick(
         if (-g_addy > MAX_ADDY)
             g_addy = -MAX_ADDY;
     }
-    else if (Down)
+    else if (JOY_GetButton(JOYDOWN))
     {
              if (g_addy <= 0)
                  g_addy = 1;
@@ -206,30 +172,25 @@ IPT_GetJoyStick(
 
     //Move Player Analog Stick
 
-    if (StickX != 0)
+    getstickx = JOY_GetAxis(JOYSTICKX);
+    getsticky = JOY_GetAxis(JOYSTICKY);
+
+    if (getstickx != 0)
     {
-        if (StickX > 0)
-            StickX *= 2;
-        if (StickX > MAX_ADDX)
-            StickX = MAX_ADDX;
-        if (StickX < 0)
-            StickX *= 2;
-        if (StickX < -MAX_ADDX)
-            StickX = -MAX_ADDX;
-        g_addx = StickX;
+        if (getstickx > MAX_ADDX)
+            getstickx = MAX_ADDX;
+        if (getstickx < -MAX_ADDX)
+            getstickx = -MAX_ADDX;
+        g_addx = getstickx;
     }
     
-    if (StickY != 0)
+    if (getsticky != 0)
     {
-        if (StickY > 0)
-            StickY *= 2;
-        if (StickY > MAX_ADDY)
-            StickY = MAX_ADDY;
-        if (StickY < 0)
-            StickY *= 2;
-        if (StickY < -MAX_ADDY)
-            StickY = -MAX_ADDY;
-        g_addy = StickY;
+        if (getsticky > MAX_ADDY)
+            getsticky = MAX_ADDY;
+        if (getsticky < -MAX_ADDY)
+            getsticky = -MAX_ADDY;
+        g_addy = getsticky;
     }
 }
 
@@ -337,15 +298,30 @@ IPT_GetMouse(
     
     g_addx = xm;
     g_addy = ym;
-    
+
     if (mouseb1)
-        buttons[m_lookup[0]] = 1;
-    
+    {
+        if (touchmode)
+            buttons[0] = 1;
+        else
+            buttons[m_lookup[0]] = 1;
+    }
+
     if (mouseb2)
-        buttons[m_lookup[1]] = 1;
-    
+    {
+        if (touchmode)
+            buttons[1] = 1;
+        else
+            buttons[m_lookup[1]] = 1;
+    }
+
     if (mouseb3)
-        buttons[m_lookup[2]] = 1;
+    {
+        if (touchmode)
+            buttons[2] = 1;
+        else
+            buttons[m_lookup[2]] = 1;
+    }
 }
 
 /*------------------------------------------------------------------------
@@ -432,34 +408,9 @@ IPT_ApplyJoyPadMove(
     int sx = jp->StickX;
     int sy = jp->StickY;
 
-    if (jp->AButton)
-    {
-        if (AButtonconvert == j_lookup[0]) buttons[0] = 1;
-        if (AButtonconvert == j_lookup[1]) buttons[1] = 1;
-        if (AButtonconvert == j_lookup[2]) buttons[2] = 1;
-        if (AButtonconvert == j_lookup[3]) buttons[3] = 1;
-    }
-    if (jp->BButton)
-    {
-        if (BButtonconvert == j_lookup[0]) buttons[0] = 1;
-        if (BButtonconvert == j_lookup[1]) buttons[1] = 1;
-        if (BButtonconvert == j_lookup[2]) buttons[2] = 1;
-        if (BButtonconvert == j_lookup[3]) buttons[3] = 1;
-    }
-    if (jp->XButton)
-    {
-        if (XButtonconvert == j_lookup[0]) buttons[0] = 1;
-        if (XButtonconvert == j_lookup[1]) buttons[1] = 1;
-        if (XButtonconvert == j_lookup[2]) buttons[2] = 1;
-        if (XButtonconvert == j_lookup[3]) buttons[3] = 1;
-    }
-    if (jp->YButton)
-    {
-        if (YButtonconvert == j_lookup[0]) buttons[0] = 1;
-        if (YButtonconvert == j_lookup[1]) buttons[1] = 1;
-        if (YButtonconvert == j_lookup[2]) buttons[2] = 1;
-        if (YButtonconvert == j_lookup[3]) buttons[3] = 1;
-    }
+    for (int i = 0; i < 4; ++i)
+        if (jp->buttons[i])
+            buttons[i] = 1;
 
     if (jp->TriggerRight > 0)
         buttons[0] = 1;
@@ -892,4 +843,3 @@ IPT_LoadPrefs(
     j_lookup[2] = INI_GetPreferenceLong("JoyStick", "ChangeSp", 2);
     j_lookup[3] = INI_GetPreferenceLong("JoyStick", "MegaFire", 3);
 }
-

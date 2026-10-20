@@ -10,9 +10,3 @@ Categories=Game;ActionGame;
 Keywords=raptor;shooter;apogee;
 StartupNotify=true
 StartupWMClass=raptor
-
-Actions=Setup;
-
-[Desktop Action Setup]
-Name=Raptor Setup
-Exec=raptorsetup

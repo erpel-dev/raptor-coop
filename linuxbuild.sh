@@ -24,7 +24,7 @@ build_native() {
         cmake -DCMAKE_BUILD_TYPE=Release ..
         make -j"$(nproc)"
     )
-    echo "Built: build/bin/raptor and build/bin/raptorsetup"
+    echo "Built: build/bin/raptor (with built-in setup)"
 }
 
 build_flatpak() {
@@ -69,7 +69,7 @@ build_flatpak() {
     echo "Installed (user): ${APP_ID}"
     echo "Bundle: ${BUNDLE_NAME}"
     echo "Run: flatpak run ${APP_ID}"
-    echo "Setup: flatpak run --command=raptorsetup ${APP_ID}"
+    echo "Setup: select Run Setup in the startup menu"
     echo "Assets: ~/.var/app/${APP_ID}/data/Raptor/"
 }
 

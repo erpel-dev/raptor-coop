@@ -6,37 +6,54 @@ typedef struct
 	bool Up, Down, Left, Right;
 	bool Start, Back, LeftShoulder, RightShoulder;
 	bool AButton, BButton, XButton, YButton;
+	bool buttons[4];
 	int16_t StickX, StickY, TriggerLeft, TriggerRight;
 } JoyPadState;
 
-extern SDL_GameController* ControllerHandles[MAX_CONTROLLERS];
-extern SDL_Haptic* RumbleHandles[MAX_CONTROLLERS];
-extern JoyPadState joypads[MAX_CONTROLLERS];
 extern int joy_num_pads;
+void IPT_ReadJoyPad(int pad, JoyPadState *out);
+
+typedef enum
+{
+	JOYSTICKX,
+	JOYSTICKY,
+	JOYTRIGGERLEFT,
+	JOYTRIGGERRIGHT,
+	JOYUP,
+	JOYDOWN,
+	JOYLEFT,
+	JOYRIGHT,
+	JOYSTART,
+	JOYBACK,
+	JOYLEFTSHOULDER,
+	JOYRIGHTSHOULDER,
+	JOYA,
+	JOYB,
+	JOYX,
+	JOYY
+} joy_buttons_axis;
+
+typedef enum
+{
+	FIRE,
+	CHWEAPON,
+	MEGABOMB,
+	MEGAFIRE
+} joy_buttons_map;
 
 extern int joy_ack;
 
-/* Legacy globals = pad 0 (menus / single-player joystick). */
-extern bool Up, Down, Left, Right;
-extern bool Start, Back, LeftShoulder, RightShoulder;
-extern bool AButton, BButton, XButton, YButton;
-
-extern int16_t StickX, StickY, TriggerLeft, TriggerRight;
-
-extern int AButtonconvert, BButtonconvert, XButtonconvert, YButtonconvert;
-
 void IPT_CalJoy(void);
-void IPT_CloJoy(void);
+void IPT_CloJoy(int closeall);
 void IPT_CalJoyRumbleLow(void);
 void IPT_CalJoyRumbleMedium(void);
 void IPT_CalJoyRumbleHigh(void);
-void IPT_ReadJoyPad(int pad, JoyPadState *out);
 
 int JOY_IsKey(int button);
-void JOY_Wait(int button);
-int JOY_IsKeyInGameStart(int button);
-int JOY_IsKeyInGameBack(int button);
-int JOY_IsKeyMenu(int button);
+void JOY_Wait(int index, int button);
 
-void GetJoyButtonMapping(void);
-int JOY_IsScroll(int scrollflag);
+int JOY_MapsInput(void);
+int JOY_GetInput(void);
+int JOY_GetMappedButton(int button);
+int JOY_GetButton(int button);
+int JOY_GetAxis(int axis);
