@@ -18,13 +18,13 @@ BEGIN
         BLOCK "040904E4"
         BEGIN
             VALUE "CompanyName", "Raptor contributors"
-            VALUE "FileDescription", "Raptor Co-op 0.8.3-coop.1"
-            VALUE "FileVersion", "0.8.3-coop.1"
+            VALUE "FileDescription", "Raptor Co-op 0.8.3-coop.2"
+            VALUE "FileVersion", "0.8.3-coop.2"
             VALUE "InternalName", "raptor"
             VALUE "LegalCopyright", "Licensed under GPL-2.0-or-later"
             VALUE "OriginalFilename", "raptor"
             VALUE "ProductName", "Raptor"
-            VALUE "ProductVersion", "0.8.3-coop.1"
+            VALUE "ProductVersion", "0.8.3-coop.2"
         END
     END
     BLOCK "VarFileInfo"
