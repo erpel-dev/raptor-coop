@@ -43,6 +43,7 @@ typedef enum
 
 extern int joy_ack;
 
+int IPT_JoyPadAttached(int slot);
 void IPT_CalJoy(void);
 void IPT_CloJoy(int closeall);
 void IPT_CalJoyRumbleLow(void);

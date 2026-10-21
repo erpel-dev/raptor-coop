@@ -32,58 +32,63 @@ IPT_CalJoy(
 	if (SDL_Init(SDL_INIT_GAMECONTROLLER) < 0)
 		return;
 
-	MaxJoysticks = SDL_NumJoysticks();
-	ControllerIndex = 0;
-	joy_num_pads = 0;
-	
-	for (JoystickIndex = 0; JoystickIndex < MaxJoysticks; ++JoystickIndex)
-	{
-		if (!SDL_IsGameController(JoystickIndex))
-		{
-			continue;
-		}
-		if (ControllerIndex >= MAX_CONTROLLERS)
-		{
-			break;
-		}
-		
-		ControllerHandles[ControllerIndex] = SDL_GameControllerOpen(JoystickIndex);
-		
-		if (ControllerHandles[ControllerIndex])
-			joy_num_pads = ControllerIndex + 1;
-		ControllerIndex++;
-	}
+    IPT_CloJoy(0);
+    MaxJoysticks = SDL_NumJoysticks();
+    for (int device = 0; device < MaxJoysticks; device++)
+    {
+        if (!SDL_IsGameController(device))
+            continue;
+        SDL_JoystickID instance = SDL_JoystickGetDeviceInstanceID(device);
+        int slot = -1, known = 0;
+        for (int i = 0; i < MAX_CONTROLLERS; i++)
+        {
+            if (!ControllerHandles[i])
+            {
+                if (slot == -1)
+                    slot = i;
+            }
+            else if (SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(ControllerHandles[i])) == instance)
+                known = 1;
+        }
+        // Keep surviving players' slots and avoid reopening existing handles.
+        if (!known && slot != -1)
+        {
+            ControllerHandles[slot] = SDL_GameControllerOpen(device);
+            if (ControllerHandles[slot])
+                joy_num_pads++;
+        }
+    }
+}
+
+int IPT_JoyPadAttached(int slot)
+{
+    return slot >= 0 && slot < MAX_CONTROLLERS && ControllerHandles[slot]
+        && SDL_GameControllerGetAttached(ControllerHandles[slot]);
 }
 
 /***************************************************************************
-IPT_CloJoy() - Close Gamecontroller
+IPT_CloJoy() - Close detached controllers without moving surviving slots
  ***************************************************************************/
-void  
-IPT_CloJoy(
-	int closeall
-)
+void IPT_CloJoy(int closeall)
 {
-	if (closeall)
-		joy_num_pads = 0;
-	for (ControllerIndex = 0; ControllerIndex < MAX_CONTROLLERS; ++ControllerIndex)
-	{
-		for (int i = 0; i < 16; i++)
-			joyinput[ControllerIndex][i] = 0;
-
-		for (int i = 0; i < 4; i++)
-			joyinputmap[ControllerIndex][i] = 0;
-
-		if (ControllerHandles[ControllerIndex] && !SDL_GameControllerGetAttached(ControllerHandles[ControllerIndex]) && !closeall)
-		{
-			SDL_GameControllerClose(ControllerHandles[ControllerIndex]);
-			ControllerHandles[ControllerIndex] = NULL;
-		}
-		else if (ControllerHandles[ControllerIndex] && closeall)
-		{
-			SDL_GameControllerClose(ControllerHandles[ControllerIndex]);
-			ControllerHandles[ControllerIndex] = NULL;
-		}
-	}
+    joy_num_pads = 0;
+    for (int i = 0; i < MAX_CONTROLLERS; i++)
+    {
+        if (ControllerHandles[i] && (closeall || !IPT_JoyPadAttached(i)))
+        {
+            SDL_GameControllerClose(ControllerHandles[i]);
+            ControllerHandles[i] = NULL;
+        }
+        if (IPT_JoyPadAttached(i))
+            joy_num_pads++;
+        else
+        {
+            memset(joyinput[i], 0, sizeof(joyinput[i]));
+            memset(joyinputmap[i], 0, sizeof(joyinputmap[i]));
+        }
+    }
+    if (!joy_num_pads)
+        joy_ack = 0;
 }
 
 /***************************************************************************
@@ -126,7 +131,7 @@ I_HandleJoystickEvent(
 	{
 		if (ControllerHandles[ControllerIndex] != 0 && SDL_GameControllerGetAttached(ControllerHandles[ControllerIndex]))
 		{
-			joy_num_pads = ControllerIndex + 1;
+			joy_num_pads++;
 			joyinput[ControllerIndex][JOYUP] = SDL_GameControllerGetButton(ControllerHandles[ControllerIndex], SDL_CONTROLLER_BUTTON_DPAD_UP);
 			joyinput[ControllerIndex][JOYDOWN] = SDL_GameControllerGetButton(ControllerHandles[ControllerIndex], SDL_CONTROLLER_BUTTON_DPAD_DOWN);
 			joyinput[ControllerIndex][JOYLEFT] = SDL_GameControllerGetButton(ControllerHandles[ControllerIndex], SDL_CONTROLLER_BUTTON_DPAD_LEFT);

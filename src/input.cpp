@@ -595,13 +595,17 @@ IPT_SampleButtonsPlr(
         if (KBD_Key(k_Mega))
             pl->buttons[3] = 1;
 
-        if (control == I_JOYSTICK || (control == I_KEYBOARD && joy_num_pads >= 1 && num_players == 1))
+        if (control == I_JOYSTICK || (control == I_KEYBOARD && IPT_JoyPadAttached(0) && num_players == 1))
         {
             IPT_ReadJoyPad(0, &jp);
             buttons[0] = buttons[1] = buttons[2] = buttons[3] = 0;
-            g_addx = pl->addx;
-            g_addy = pl->addy;
+            int key_addx = g_addx, key_addy = g_addy;
             IPT_ApplyJoyPadMove(&jp);
+            // A neutral pad must not damp or replace keyboard movement.
+            if (!jp.StickX && !jp.Left && !jp.Right)
+                g_addx = key_addx;
+            if (!jp.StickY && !jp.Up && !jp.Down)
+                g_addy = key_addy;
             pl->buttons[0] |= buttons[0];
             pl->buttons[1] |= buttons[1];
             pl->buttons[2] |= buttons[2];
@@ -612,7 +616,7 @@ IPT_SampleButtonsPlr(
 
     /* Player 2: prefer a dedicated gamepad. */
     pad = (control == I_JOYSTICK) ? 1 : 0;
-    if (pad < joy_num_pads)
+    if (IPT_JoyPadAttached(pad))
     {
         IPT_ReadJoyPad(pad, &jp);
         buttons[0] = buttons[1] = buttons[2] = buttons[3] = 0;
@@ -653,7 +657,7 @@ IPT_MovePlayerPlr(
     Player *pl;
     int delta;
 
-    if (demo_mode == DEMO_PLAYBACK)
+    if (demo_mode == DEMO_PLAYBACK || control_pause)
         return;
 
     if (pidx < 0 || pidx >= num_players)
@@ -677,16 +681,19 @@ IPT_MovePlayerPlr(
             {
             case I_KEYBOARD:
             default:
-                /* Sample buttons first, then apply move from held keys. */
-                IPT_SampleButtonsPlr(0);
-                g_addx = pl->addx;
-                g_addy = pl->addy;
                 IPT_GetKeyBoard();
+                IPT_SampleButtonsPlr(0);
                 break;
 
             case I_JOYSTICK:
             {
                 JoyPadState jp;
+                if (!IPT_JoyPadAttached(0))
+                {
+                    IPT_GetKeyBoard();
+                    IPT_SampleButtonsPlr(0);
+                    break;
+                }
                 IPT_ReadJoyPad(0, &jp);
                 IPT_ApplyJoyPadMove(&jp);
                 pl->buttons[0] = buttons[0];
@@ -697,8 +704,11 @@ IPT_MovePlayerPlr(
             }
 
             case I_MOUSE:
-                IPT_GetMouse();
                 IPT_SampleButtonsPlr(0);
+                buttons[0] = buttons[1] = buttons[2] = buttons[3] = 0;
+                IPT_GetMouse();
+                for (int i = 0; i < 4; i++)
+                    pl->buttons[i] |= buttons[i];
                 break;
             }
         }

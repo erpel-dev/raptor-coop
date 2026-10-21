@@ -1211,9 +1211,12 @@ OBJS_SubEnergyPlr(
 
     SND_Patch(FX_HIT, 127);
 
+    int old_energy = pl->energy;
     pl->energy -= amt;
     if (pl->energy < 0)
         pl->energy = 0;
+    if (pl->energy < old_energy)
+        pl->damage_pending = 1;
 
     /* Keep shared inventory energy mirrored from highest living player. */
     cur = p_objs[S_ENERGY];
@@ -1346,7 +1349,7 @@ OBJS_LoseObj(
 {
     int rval, type;
     OBJ_LIB *lib;
-    rval = 1;
+    rval = 0;
     
     if (plr.sweapon == -1)
     {
@@ -1361,7 +1364,7 @@ OBJS_LoseObj(
             }
         }
     }
-    else
+    else if (p_objs[plr.sweapon])
     {
         OBJS_Del(plr.sweapon);
         rval = 1;
@@ -1389,7 +1392,21 @@ OBJS_Think(
             if (think_cnt > CHARGE_SHIELD)
             {
                 if (startendwave == -1)
-                    OBJS_AddEnergy(1);
+                {
+                    int full_player = -1;
+                    for (int i = 0; i < num_players; i++)
+                    {
+                        if (!players[i].alive || players[i].energy <= 0)
+                            continue;
+                        if (players[i].energy < MAX_SHIELD)
+                            OBJS_AddEnergyPlr(i, 1);
+                        else
+                            full_player = i;
+                    }
+                    // The shared super-shield still recharges once per tick.
+                    if (full_player != -1)
+                        OBJS_AddEnergyPlr(full_player, 1);
+                }
                 think_cnt = 0;
             }
         }

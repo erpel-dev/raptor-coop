@@ -176,7 +176,7 @@ BONUS_Think(
     int x, y, x2, y2;
     BONUS *cur;
     static int gcnt;
-    int pi;
+    int pi, collector;
 
     for (cur = first_bonus.next; &last_bonus != cur; cur = cur->next)
     {
@@ -208,7 +208,8 @@ BONUS_Think(
         if (cur->curglow >= 4)
             cur->curglow = 0;
         
-        for (pi = 0; pi < num_players; pi++)
+        collector = -1;
+        for (pi = 0; pi < num_players && !cur->dflag; pi++)
         {
             Player *pl = &players[pi];
             if (!pl->alive || pl->energy <= 0)
@@ -217,33 +218,42 @@ BONUS_Think(
             y = pl->y;
             x2 = pl->x + PLAYERWIDTH;
             y2 = pl->y + PLAYERHEIGHT;
-
-            if (cur->x > x && cur->x < x2 && cur->y > y && cur->y < y2)
+            if (cur->x <= x || cur->x >= x2 || cur->y <= y || cur->y >= y2)
+                continue;
+            if (cur->type == S_ENERGY)
             {
-                if (!cur->dflag)
+                if (pl->energy >= OBJS_GetLib(S_ENERGY)->max_cnt)
                 {
-                    SND_Patch(FX_BONUS, 127);
-
-                    if (cur->type == S_ENERGY)
-                        OBJS_AddEnergyPlr(pi, MAX_SHIELD / 4);
-                    else
-                        OBJS_Add(cur->type);
-
-                    if (cur->lib->moneyflag)
-                    {
-                        cur->dflag = 1;
-                        cur->countdown = 50;
-                    }
-                    else
-                    {
-                        cur = BONUS_Remove(cur);
-                        goto next_bonus;
-                    }
-                    break;
+                    int super = OBJS_GetAmt(S_SUPER_SHIELD);
+                    if (super <= 0 || super >= OBJS_GetLib(S_SUPER_SHIELD)->max_cnt)
+                        continue;
                 }
+                if (collector != -1 && players[collector].energy <= pl->energy)
+                    continue;
+            }
+            collector = pi;
+            if (cur->type != S_ENERGY)
+                break;
+        }
+        if (collector != -1)
+        {
+            SND_Patch(FX_BONUS, 127);
+            if (cur->type == S_ENERGY)
+                OBJS_AddEnergyPlr(collector, MAX_SHIELD / 4);
+            else
+                OBJS_Add(cur->type);
+            if (cur->lib->moneyflag)
+            {
+                cur->dflag = 1;
+                cur->countdown = 50;
+            }
+            else
+            {
+                cur = BONUS_Remove(cur);
+                goto next_bonus;
             }
         }
-        
+
         if (cur->dflag)
         {
             cur->countdown--;

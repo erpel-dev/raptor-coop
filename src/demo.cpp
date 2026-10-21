@@ -12,6 +12,7 @@
 #include "windows.h"
 #include "intro.h"
 #include "input.h"
+#include "player.h"
 #include "fileids.h"
 #include "entypes.h"
 
@@ -303,6 +304,8 @@ DEMO_Think(
         player_cx = playerx + 16;
         player_cy = playery + 16;
         playerpic = LE_SHORT(playback[cur_play].playerpic);
+        RAP_StorePlayerGlobalsTo(0);
+        memcpy(players[0].buttons, buttons, sizeof(buttons));
         cur_play++;
         if (cur_play > max_play)
         {
@@ -312,13 +315,13 @@ DEMO_Think(
         break;
     
     case DEMO_RECORD:
-        playback[cur_play].b1 = buttons[0];
-        playback[cur_play].b2 = buttons[1];
-        playback[cur_play].b3 = buttons[2];
-        playback[cur_play].b4 = buttons[3];
-        playback[cur_play].px = LE_SHORT(playerx);
-        playback[cur_play].py = LE_SHORT(playery);
-        playback[cur_play].playerpic = LE_SHORT(playerpic);
+        playback[cur_play].b1 = players[0].buttons[0];
+        playback[cur_play].b2 = players[0].buttons[1];
+        playback[cur_play].b3 = players[0].buttons[2];
+        playback[cur_play].b4 = players[0].buttons[3];
+        playback[cur_play].px = LE_SHORT(players[0].x);
+        playback[cur_play].py = LE_SHORT(players[0].y);
+        playback[cur_play].playerpic = LE_SHORT(players[0].pic);
         cur_play++;
         if (cur_play == MAX_DEMO)
         {

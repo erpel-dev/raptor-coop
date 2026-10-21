@@ -5,8 +5,8 @@
 MAINICON ICON "raptor.ico"
 
 VS_VERSION_INFO VERSIONINFO
-    FILEVERSION 0,0,0,0
-    PRODUCTVERSION 0,0,0,0
+    FILEVERSION 0,8,3,0
+    PRODUCTVERSION 0,8,3,0
     FILEFLAGSMASK 0x3FL
     FILEFLAGS 0x0L
     FILEOS 0x4L
@@ -17,14 +17,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4"
         BEGIN
-            VALUE "CompanyName", "..."
-            VALUE "FileDescription", "..."
-            VALUE "FileVersion", "0.0.0.0"
-            VALUE "InternalName", "..."
-            VALUE "LegalCopyright", "© ..."
+            VALUE "CompanyName", "Raptor contributors"
+            VALUE "FileDescription", "Raptor Co-op 0.8.3-coop.1"
+            VALUE "FileVersion", "0.8.3-coop.1"
+            VALUE "InternalName", "raptor"
+            VALUE "LegalCopyright", "Licensed under GPL-2.0-or-later"
             VALUE "OriginalFilename", "raptor"
             VALUE "ProductName", "Raptor"
-            VALUE "ProductVersion", "0.0"
+            VALUE "ProductVersion", "0.8.3-coop.1"
         END
     END
     BLOCK "VarFileInfo"

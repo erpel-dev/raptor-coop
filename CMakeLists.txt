@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 project(raptor)
 
 set(EXECUTABLE_OUTPUT_PATH "bin")
@@ -201,4 +201,16 @@ if(NOT ANDROID)
         install(FILES "${CMAKE_SOURCE_DIR}/pkg/flatpak/io.github.erpel_dev.Raptor.metainfo.xml"
             DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
     endif()
+endif()
+
+# These tests exercise game state without loading GLB assets or opening a window.
+option(RAPTOR_BUILD_TESTS "Build co-op regression tests (Linux)" OFF)
+if(RAPTOR_BUILD_TESTS AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    enable_testing()
+    add_executable(coop_tests tests/coop_tests.cpp ${SOURCE_FILES})
+    target_compile_definitions(coop_tests PRIVATE RAPTOR_TESTING=1)
+    target_include_directories(coop_tests PRIVATE src)
+    target_link_libraries(coop_tests textscreen asound SDL2::SDL2)
+    add_test(NAME coop_regressions COMMAND coop_tests)
+    set_tests_properties(coop_regressions PROPERTIES TIMEOUT 30)
 endif()

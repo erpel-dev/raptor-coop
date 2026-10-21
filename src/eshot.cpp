@@ -420,24 +420,27 @@ ESHOT_Think(
                 shot->move.y2 = 200;  
                 
                 {
-                    int pi;
-                    for (pi = 0; pi < num_players; pi++)
+                    int target = -1;
+                    int nearest_y = 200;
+                    for (int pi = 0; pi < num_players; pi++)
                     {
                         Player *pl = &players[pi];
                         int dxp;
                         if (!pl->alive || pl->energy <= 0)
                             continue;
                         dxp = abs(shot->x - pl->cx);
-                        if (dxp < (PLAYERWIDTH / 2) && shot->y < pl->cy)
+                        if (dxp < (PLAYERWIDTH / 2) && shot->y < pl->cy && pl->cy < nearest_y)
                         {
-                            shot->move.y2 = pl->cy + (wrand() % 4) - 2;
-                            OBJS_SubEnergyPlr(pi, lib->hits);
-                            if ((haptic) && (control == 2))
-                            {
-                                IPT_CalJoyRumbleLow();
-                            }
-                            break;
+                            target = pi;
+                            nearest_y = pl->cy;
                         }
+                    }
+                    if (target != -1)
+                    {
+                        shot->move.y2 = players[target].cy + (wrand() % 4) - 2;
+                        OBJS_SubEnergyPlr(target, lib->hits);
+                        if (haptic && control == 2)
+                            IPT_CalJoyRumbleLow();
                     }
                 }
             }

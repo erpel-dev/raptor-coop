@@ -11,6 +11,7 @@ typedef struct
     int cx, cy;
     int pic;
     int basepic;
+    int damage_pending;     /* normal shield damage since the last frame update */
     int energy;             /* per-player shield energy */
     int addx, addy;
     int buttons[4];
@@ -33,3 +34,9 @@ int RAP_NearestPlayerTo(int x, int y);
 int RAP_FirstLivingPlayer(void);
 Player *RAP_PlayerAt(int idx);
 char *RAP_ShipColorRemap(int idx);
+
+int RAP_LowestLivingEnergy(void);
+void RAP_UsePlayerWeapons(void);
+
+int RAP_ApplyLowShieldDamage(void);
+void RAP_FlyPlayersOffscreen(void);

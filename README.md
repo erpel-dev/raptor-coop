@@ -11,9 +11,9 @@ Added local coop option, can be toggled in GAME OPTIONS
 Original Raptor Call Of The Shadows author Scott Host is working on a new modernized version of the classic called Raptor Remixed. If you are a Raptor fan it would be cool if you would support the project on Kickstarter. For more information visit [www.mking.com](https://www.mking.com)
 
 ## Quick start
-Release builds are available for Windows, macOS and Android.
-To download the latest release build for your platform, click [Download](https://github.com/skynettx/raptor/releases/latest).
-Then install the downloaded release build on your system by following the instructions of the installer.
+Automated release archives are available for Linux, Windows and macOS. Android can be built manually.
+To download the latest release build for your platform, click [Download](https://github.com/erpel-dev/raptor-coop/releases/latest).
+Extract the downloaded archive and follow START-HERE.txt. Windows archives include SDL2; Linux needs SDL2 and ALSA runtime packages. macOS archives bundle SDL2 and are ad-hoc signed, without notarization.
 You then need to obtain the assets (GLB files) of the shareware or full version 1.2 or higher yourself and copy them into the installation directory or the external system specific directory.
 That's it now Raptor is ready to play.
 For those who want to build themselves or who want more configuration information, continue below otherwise you're done here.
@@ -99,11 +99,38 @@ To disable or enable the display of the setup at startup set under the [Setup] s
 `setup_menu=0`  
 `setup_menu=1`  
 
+## Local co-op
+Enable **CO-OP ON** in GAME OPTIONS, or set `Coop=1` under `[Setup]` in `SETUP.INI`.
+P1 has a red ship; P2 has a yellow ship. With keyboard controls, the defaults are:
+
+| Action | P1 | P2 |
+| --- | --- | --- |
+| Move | Arrow keys | WASD |
+| Fire | Right Ctrl or Enter | Left Ctrl |
+| Cycle shared special weapon | Right Alt | Left Alt |
+| Mega bomb | Space | M |
+
+P1 movement and mega-bomb bindings follow the keyboard configuration. In co-op,
+P1 fire and weapon cycling use the right-side keys above. P2's keyboard bindings
+are fixed. With keyboard or mouse selected for P1, the first gamepad controls P2;
+with gamepad selected for P1, P2 uses the second gamepad, falling back to WASD.
+
+Weapons, ammunition, selected special weapon and score are shared. Either player
+can cycle the weapon; simultaneous presses change it once. Normal shield energy and health pickups
+are per player, except for the shared super-shield. Overlapping ships give a health
+pickup to the most injured eligible ship; a pickup stays available if neither ship
+can use it. Idle shield regeneration heals
+each living ship on difficulties that support it. A destroyed ship sits out the
+rest of the mission. All surviving ships fly out together at mission end; the next
+mission restores both ships using the surviving
+ship's shield level. The right shield bar shows P1; the left shows P2, or the shared
+super-shield while it is active.
+
 ## Build
 The project supports the compilers msvc, gcc and clang.  
-When you have installed git on your system you can clone the repository by type in `git clone https://github.com/skynettx/raptor.git`.
+When you have installed git on your system you can clone the repository by type in `git clone https://github.com/erpel-dev/raptor-coop.git`.
 The following steps apply to Windows, Linux, and macOS. For Android, please continue reading in the Android section.
-CMake is required to generate project files or makefiles.
+CMake 3.16 or newer is required to generate project files or makefiles.
 In the root of the repository type:
 ```
 mkdir build
@@ -203,3 +230,31 @@ Also many thanks to [schellingb](https://github.com/schellingb) for the great Ti
 
 
 
+
+## Regression tests
+On Linux with SDL2 2.0.14 or newer and the normal build dependencies installed:
+
+```sh
+cmake -S . -B build -DRAPTOR_BUILD_TESTS=ON
+cmake --build build --parallel 4
+ctest --test-dir build --output-on-failure
+```
+
+The tests exercise input, virtual controller disconnect/reconnect, replay state,
+shared weapon actions, laser interception, health pickup fairness, per-player
+damage, shield regeneration and squad exits without GLB assets, a display or
+audio hardware.
+
+## CI and releases
+GitHub Actions builds Linux, Windows x64 and macOS on pushes and pull requests.
+Linux runs the co-op regression suite with the setup menu both enabled and disabled.
+Tests use virtual controllers and require no proprietary assets or display.
+Build archives are available as workflow artifacts.
+
+To publish a release, update `VERSION`, `src/rapver.h`, Windows resource versions
+and Flatpak release metadata, and add `docs/releases/v<VERSION>.md`. Push the
+commit, then an annotated `v<VERSION>` tag. The tag must match `VERSION`.
+The workflow publishes a GitHub release with all three desktop archives and
+SHA-256 checksums only after every build and regression job succeeds.
+It uses the built-in GitHub token; no additional release secret is needed.
+Original GLB assets are excluded from the archives.
