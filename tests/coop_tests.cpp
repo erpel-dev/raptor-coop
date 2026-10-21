@@ -20,10 +20,13 @@ extern int control_pause, k_Up, k_Down, k_Left, k_Right;
 extern int k_Fire, k_FireSp, k_ChangeSp, k_Mega, m_lookup[3];
 extern int cur_play, max_play, think_cnt, objuse_flag, fx_volume;
 extern RECORD playback[MAX_DEMO + 1];
+extern SDL_GameController* ControllerHandles[MAX_CONTROLLERS];
 
 // Assertions must remain enabled in Release/RelWithDebInfo builds.
 #define CHECK(condition) do { if (!(condition)) { \
     std::fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, #condition); \
+    if (std::getenv("GITHUB_ACTIONS")) \
+        std::fprintf(stderr, "::error file=%s,line=%d::Failed: %s\n", __FILE__, __LINE__, #condition); \
     std::exit(1); } } while (0)
 
 static void Reset(int count = 2)
@@ -88,18 +91,31 @@ static void KeyboardAndMouse()
     std::puts("PASS keyboard independence and mouse/keyboard button merging (1P and 2P)");
 }
 
+static int DeviceIndex(SDL_JoystickID instance)
+{
+    for (int i = 0; i < SDL_NumJoysticks(); i++)
+        if (SDL_JoystickGetDeviceInstanceID(i) == instance)
+            return i;
+    return -1;
+}
+
 static void Controllers()
 {
     Reset(1);
     CHECK(SDL_Init(SDL_INIT_GAMECONTROLLER) == 0);
-    int id[2]; SDL_Joystick *pad[2];
+    for (int i = 0; i < 2; i++)
+        CHECK(SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_GAMECONTROLLER, 6, 16, 0) >= 0);
+    IPT_CalJoy(); CHECK(joy_num_pads == 2);
+    // SDL versions differ in device enumeration order. Drive the actual slots.
+    SDL_Joystick *pad[2]; SDL_JoystickID instance[2];
     for (int i = 0; i < 2; i++)
     {
-        id[i] = SDL_JoystickAttachVirtual(SDL_JOYSTICK_TYPE_GAMECONTROLLER, 6, 16, 0);
-        CHECK(id[i] >= 0);
-        pad[i] = SDL_JoystickOpen(id[i]); CHECK(pad[i]);
+        pad[i] = SDL_GameControllerGetJoystick(ControllerHandles[i]); CHECK(pad[i]);
+        instance[i] = SDL_JoystickInstanceID(pad[i]);
+        // Older SDL mappings span the full signed range for trigger axes.
+        CHECK(SDL_JoystickSetVirtualAxis(pad[i], SDL_CONTROLLER_AXIS_TRIGGERLEFT, -32768) == 0);
+        CHECK(SDL_JoystickSetVirtualAxis(pad[i], SDL_CONTROLLER_AXIS_TRIGGERRIGHT, -32768) == 0);
     }
-    IPT_CalJoy(); CHECK(joy_num_pads == 2);
     CHECK(SDL_JoystickSetVirtualAxis(pad[0], SDL_CONTROLLER_AXIS_LEFTX, 32767) == 0);
     CHECK(SDL_JoystickSetVirtualButton(pad[0], SDL_CONTROLLER_BUTTON_A, 1) == 0);
     SDL_JoystickUpdate();
@@ -121,8 +137,7 @@ static void Controllers()
     CHECK(players[0].addx > 0 && players[1].addx < 0);
     CHECK(players[0].buttons[0] && !players[1].buttons[0] && players[1].buttons[1]);
     IPT_CloJoy(1);
-    for (int i = 0; i < 2; i++) SDL_JoystickClose(pad[i]);
-    for (int i = 1; i >= 0; i--) CHECK(SDL_JoystickDetachVirtual(id[i]) == 0);
+    for (int i = 0; i < 2; i++) CHECK(SDL_JoystickDetachVirtual(DeviceIndex(instance[i])) == 0);
     SDL_Quit();
     std::puts("PASS mixed keyboard/gamepad movement and two independent controllers");
 }
@@ -210,14 +225,6 @@ static void Shields()
 extern BONUS first_bonus, last_bonus;
 extern ESHOT *ESHOT_Get(void);
 
-static int DeviceIndex(SDL_JoystickID instance)
-{
-    for (int i = 0; i < SDL_NumJoysticks(); i++)
-        if (SDL_JoystickGetDeviceInstanceID(i) == instance)
-            return i;
-    return -1;
-}
-
 static void ControllerRemoval()
 {
     Reset(); CHECK(SDL_Init(SDL_INIT_GAMECONTROLLER) == 0);
@@ -229,6 +236,8 @@ static void ControllerRemoval()
     }
     IPT_CalJoy(); IPT_CalJoy();
     CHECK(joy_num_pads == 2 && IPT_JoyPadAttached(0) && IPT_JoyPadAttached(1));
+    for (int i = 0; i < 2; i++)
+        instance[i] = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(ControllerHandles[i]));
     SDL_GameController *survivor = SDL_GameControllerFromInstanceID(instance[1]);
     CHECK(SDL_JoystickDetachVirtual(DeviceIndex(instance[0])) == 0);
     SDL_PumpEvents(); IPT_CloJoy(0);

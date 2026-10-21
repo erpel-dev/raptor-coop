@@ -19,7 +19,7 @@ jobs:
       matrix:
         setup: ['ON', 'OFF']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, Node.js 24
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libasound2-dev
       - name: Configure
@@ -46,7 +46,7 @@ jobs:
           - os: macos-14
             platform: macos
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, Node.js 24
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libasound2-dev
@@ -63,7 +63,7 @@ jobs:
         run: cmake --build build --config Release --parallel 4
       - name: Package
         run: python scripts/package-release.py --build-dir build --output-dir dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, Node.js 24
         with:
           name: raptor-${{ matrix.platform }}
           path: dist/*
@@ -77,13 +77,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, Node.js 24
       - name: Check release version and notes
         shell: bash
         run: |
           test "$GITHUB_REF_NAME" = "v$(cat VERSION)"
           test -s "docs/releases/$GITHUB_REF_NAME.md"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7, Node.js 24
         with:
           pattern: raptor-*
           path: dist
@@ -100,7 +100,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh release create "$GITHUB_REF_NAME" --verify-tag \
+          gh release create "$GITHUB_REF_NAME" --verify-tag --latest \
             --title "Raptor Co-op $GITHUB_REF_NAME" \
             --notes-file "docs/releases/$GITHUB_REF_NAME.md" \
             dist/*.tar.gz dist/*.zip dist/SHA256SUMS
